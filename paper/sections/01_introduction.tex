@@ -1,0 +1,15 @@
+\section{Motivation}
+\label{sec:motivation}
+
+Zcash addresses are long encoded strings. A naming system maps these strings to human-readable labels, but this requires enforcing rules about which names are claimed and who controls them.
+Zcash consensus tracks unspent coins. Lacking a virtual machine to run logic and a global state tree to store variables, it cannot evaluate a naming policy.
+
+To bypass this limitation, \zns{} separates the execution of those rules from the permanent public record.
+
+A single party, the Mint, executes the policy off-chain. When a request passes, the Mint writes the resulting name binding into the 512-byte memo field of a shielded Zcash transaction.
+
+Zcash consensus seals the transaction into a block, locking the binding into a permanent, chronological order.
+
+A Resolver looking up a name downloads the Zcash block headers, uses a published viewing key to decrypt the Mint's memos, and reads the bindings in the exact order consensus finalized them.
+
+The Mint issues names, but the accumulated work of the Zcash blockchain prevents it from ever altering or erasing them.

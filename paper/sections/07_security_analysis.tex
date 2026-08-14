@@ -1,0 +1,30 @@
+\section{Failure Domains}
+\label{sec:failure-domains}
+
+ZNS is an overlay network. It achieves consensus without requiring Zcash nodes to evaluate name registry rules. To achieve this, the architecture accepts specific failure domains as calculated trade-offs.
+
+\subsection{The Execution Domain: TEE vs. ZKP}
+
+A zero-knowledge proof of a state transition is mathematically pure, but enforcing a globally unique namespace requires proving a negative: that a requested name is not currently registered by anyone else.
+
+If a decentralized protocol relies on client-side ZK-SNARKs, the user's device must prove non-inclusion against the global state root. Doing this privately requires Private Information Retrieval (PIR) inside the circuit, which is computationally prohibitive for a mobile wallet. Furthermore, pushing the registry rules into a client-side circuit requires wallet consensus: every major Zcash wallet would have to bundle and execute a heavy, protocol-specific proving circuit.
+
+Conversely, off-chain ZK-Rollups that execute server-side proofs reintroduce the trusted sequencer and rely on infinitely complex, upgradable smart contracts.
+
+ZNS trades cryptographic purity for immediate viability. By isolating the state machine inside a Trusted Execution Environment (TEE), the wallet's job is trivialized to sending a standard Orchard memo. The failure domain shifts entirely to the hardware vendor (e.g., an Intel or AMD side-channel compromise). If the TEE is breached, the attacker can forge Mint signatures and overwrite the registry.
+
+\subsection{The Availability Domain: On-Chain vs. Off-Chain}
+
+Storing the registry state off-chain and merely anchoring a Merkle root on-chain is standard practice for scalable overlay networks. ZNS rejects this model. 
+
+If ZNS stored state off-chain, the Mint would become a permanent hostage situation. If the Mint operator disappeared or suffered catastrophic hardware failure, the off-chain database would be lost. The on-chain Merkle root would be useless for reconstructing the namespace, rendering the protocol permanently dead.
+
+ZNS forces every state transition into the strict 512-byte payload limit of an Orchard memo. The failure domain is Zcash consensus itself. If the Mint is vaporized, any developer can spin up a Resolver, scan the Zcash blockchain, and perfectly reconstruct the final registry state from the canonical history of Name Notes.
+
+\subsection{The Authorization Domain: OTP vs. Signatures}
+
+Zcash shielded addresses lack a standard message-signing protocol. Even if one existed, a raw cryptographic signature proves ownership of a key, but it does not prove temporal liveness, nor does it prevent replay attacks without a persistent on-chain nonce registry.
+
+ZNS uses an in-band One-Time Passcode (OTP). The Mint encrypts 16 bytes of entropy and sends it to the Unified Address on record via a standard Zcash shielded transaction. Returning that exact payload to the Mint proves two things simultaneously: cryptographic read-access to the controller address, and temporal liveness bounded by the OTP expiration block.
+
+The failure domain is key loss. If a user loses the viewing key to their Unified Address, they can never read the OTP. The name is permanently locked and cannot be updated or transferred until its registration interval lapses and the Mint returns it to the public pool.

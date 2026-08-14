@@ -1,0 +1,39 @@
+\section{The Mint}
+\label{sec:the-mint}
+
+A Name Note proves that a transition is bound to an Orchard output. It cannot determine whether the transition was allowed. That decision requires the namespace's current state and its policy.
+
+The Mint is the single authoritative program that makes this decision. It reads ordered requests from Zcash, derives the accepted namespace state, and applies the active policy. For an accepted request, it emits a self-send containing the resulting Name Note.
+
+\subsection{Authority bound to policy}
+
+The Mint spending key authorizes every accepted transition. Whoever can use that key can create an apparently valid Name Note without applying the policy. The key must therefore be available only to the program that evaluates the policy.
+
+The Mint runs inside a Trusted Execution Environment (TEE). Its remote attestation binds the Mint key to an approved enclave measurement. A Resolver accepts a Mint self-send only when the active manifest approves that measurement.
+
+This replaces trust in the Mint operator with trust in the TEE attestation system and its hardware root of trust.
+
+\subsection{Policy input and output}
+
+The Mint evaluates each request against the state derived from the accepted Zcash chain. It must use its own Zcash node and its own replay of the namespace history. It must not rely on a third-party state oracle.
+
+For each request, the active policy decides whether to emit a successor Name Note. The policy includes the following constraints:
+
+\begin{description}
+  \item[Namespace policy.] The Mint decides whether a name is claimable, live, renewable, or released. It rejects a transition that conflicts with the accepted state.
+  \item[Economic policy.] The Mint calculates the required payment from the requested name and registration interval. It rejects a request without the required payment.
+  \item[Request validity.] The Mint rejects malformed names, invalid Unified Addresses, and transitions prohibited by the active namespace policy.
+  \item[Authorization.] An \action{update} or \action{release} requires the OTP exchange defined in Section~\ref{sec:authorization}.
+\end{description}
+
+\subsection{On-chain record}
+
+The Resolver must be able to derive the namespace without the Mint. A Name Note therefore carries the complete transition tuple on-chain. The Mint must not replace a tuple field with an off-chain pointer.
+
+The encoded transition must fit in one 512-byte Orchard memo. The Mint rejects a request whose Name Note exceeds that limit. A multi-memo encoding requires an activated ZNSIP.
+
+\subsection{The Active Manifest}
+
+The Active Manifest fixes the policy parameters and the accepted enclave measurements. These parameters include pricing, registration intervals, namespace restrictions, and OTP configuration.
+
+The manifest identifies the immutable source revision and audit report for each measurement. A policy upgrade requires a new approved measurement. The activation and rollback rules are \openstatus{}.

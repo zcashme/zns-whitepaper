@@ -1,0 +1,21 @@
+\section{The Resolver}
+\label{sec:resolver}
+
+The Zcash chain records candidate Name Notes. It does not identify which candidates were authorized by the Mint or which transition is current.
+
+The Resolver derives this state from the canonical chain. It is permissionless. Two Resolvers that scan the same canonical chain under the same active manifest must derive the same registry.
+
+\subsection{Scanning}
+
+Standard Orchard wallets reject Name Notes because ZNS derives \(\psi\) and \(\mathsf{rcm}\) from the transition tuple rather than from the ordinary ZIP-212 \field{rseed} derivation. A Resolver uses a dedicated scanner and the published Name Note full viewing key.
+
+For each candidate output, the Resolver performs three checks:
+
+\begin{description}
+  \item[Decryption.] The Resolver obtains the memo and note components by authenticated decryption, bypassing the standard ZIP-212 receiving check.
+  \item[Name Note verification.] The Resolver parses the memo and reconstructs the Orchard commitment as specified in Section~\ref{sec:name-notes}.
+  \item[Mint origin.] The Resolver accepts the candidate only if its creating Orchard action spends a note from the recognized Mint-controlled unspent set.
+\end{description}
+
+For every accepted Name Note, the Resolver updates the Mint-controlled unspent set and follows the \field{prev\_rcm} link for the affected name. When the best chain changes, it rolls back to the common ancestor and replays the replacement chain.
+

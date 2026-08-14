@@ -1,0 +1,134 @@
+\documentclass[11pt]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage{tikz}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, calc, fit, backgrounds}
+\usepackage{hyperref}
+
+\definecolor{znslink}{HTML}{245C3D}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=znslink,
+  citecolor=znslink,
+  urlcolor=znslink,
+  pdftitle={Zcash Name Service},
+  pdfauthor={craftsoldier}
+}
+
+\setlist{nosep,leftmargin=*}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.65em}
+\renewcommand{\arraystretch}{1.18}
+\setlength{\emergencystretch}{1em}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\newcommand{\zns}{\textsc{ZNS}}
+\newcommand{\field}[1]{\texttt{#1}}
+\newcommand{\hexfield}[1]{\nolinkurl{#1}}
+\newcommand{\action}[1]{\texttt{#1}}
+\newcommand{\state}[1]{\texttt{#1}}
+\newcommand{\openstatus}{\textsc{Open}}
+\newcommand{\provisional}{\textsc{Provisional}}
+\newcommand{\fixedstatus}{\textsc{Fixed}}
+
+\title{\textbf{Zcash Name Service}\\
+\large A Deterministic Name Registry over the Orchard Transaction Log}
+\author{craftsoldier\\
+\href{https://github.com/craftsoldier}{github.com/craftsoldier} \quad \href{mailto:julian@zcash.me}{julian@zcash.me}}
+\date{Protocol draft \textemdash{} \today}
+
+\begin{document}
+
+\maketitle
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\textbf{Status:} & Draft \\[0.2em]
+\textbf{Category:} & Standards Track \\[0.2em]
+\textbf{Created:} & \today \\[0.2em]
+\textbf{License:} & MIT \\[0.2em]
+\textbf{Discussion:} & \href{https://github.com/craftsoldier/zns-whitepaper}{github.com/craftsoldier/zns-whitepaper}
+\end{tabular}
+\end{center}
+
+\begin{abstract}
+Zcash payments use encoded addresses, but Zcash consensus does not assign human-readable names to them.
+Existing on-chain naming systems cannot be ported to Zcash: transparent registries such as Namecoin publish the namespace in the clear, leaking the address graph Zcash exists to hide; contract-based registries such as ENS require general-purpose on-chain state that Zcash consensus does not provide.
+The Zcash Name Service (\zns) maps each Zcash name to a Unified Address over the ordinary Zcash transaction log: each binding is recorded in the memo of an Orchard action, decryptable with the Name Note account's published full viewing key, and anchored by an Orchard note commitment derived from the same tuple.
+Zcash consensus supplies canonical order and finality; a deterministic reducer derives the registry; the bound Unified Address inherits Orchard shielding.
+Authorization is delivered by an attested Mint; a future off-chain zero-knowledge name circuit would replace that assumption with a proof.
+\end{abstract}
+
+\paragraph{Status.}
+This document is a work in progress.
+Sections explicitly marked \openstatus{} or \provisional{} are not interoperability requirements.
+Sections marked \fixedstatus{} state normative requirements backed by the cited assumptions.
+An implementation cannot infer a protocol rule from an unresolved item.
+The key words \textbf{MUST}, \textbf{MUST NOT}, \textbf{SHOULD}, and \textbf{MAY} are to be interpreted as described by BCP~14 only when they appear in uppercase \cite{bcp14}.
+
+\input{figures/diagrams}
+\input{sections/01_introduction}
+\input{sections/02_system_model}
+\input{sections/03_name_notes}
+\input{sections/04_the_mint}
+\input{sections/05_authorization}
+\input{sections/06_resolver}
+
+
+\input{sections/07_security_analysis}
+\input{sections/09_privacy}
+\input{sections/08_completion_requirements}
+\input{sections/09_znsips}
+\input{sections/02_terminology}
+
+\begin{thebibliography}{99}
+
+\bibitem{zcash-protocol}
+Electric Coin Company and Zcash Foundation.
+\emph{Zcash Protocol Specification}.
+\url{https://zips.z.cash/protocol/protocol.pdf}.
+
+\bibitem{zip212}
+Zcash Improvement Proposal 212.
+\emph{Allow Recipient to Derive Ephemeral Secret from Note Plaintext}.
+\url{https://zips.z.cash/zip-0212}.
+
+\bibitem{zip224}
+Zcash Improvement Proposal 224.
+\emph{Orchard Shielded Protocol}.
+\url{https://zips.z.cash/zip-0224}.
+
+\bibitem{zip316}
+Zcash Improvement Proposal 316.
+\emph{Unified Addresses and Unified Viewing Keys}.
+\url{https://zips.z.cash/zip-0316}.
+
+\bibitem{bcp14}
+S.~Bradner and J.~Leiba.
+\emph{Key words for use in RFCs to Indicate Requirement Levels}.
+BCP~14, RFC~2119 and RFC~8174.
+\url{https://www.rfc-editor.org/info/bcp14}.
+
+\bibitem{zip0}
+Zcash Improvement Proposal 0.
+\emph{ZIP Process}.
+\url{https://zips.z.cash/zip-0000}.
+
+\bibitem{zns-mint}
+zcashme.
+\emph{zns-mint reference implementation}.
+\url{https://github.com/zcashme/zns-mint}.
+
+\end{thebibliography}
+
+\end{document}

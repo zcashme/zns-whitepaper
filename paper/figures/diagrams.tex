@@ -1,0 +1,160 @@
+% ZNS Whitepaper diagrams
+% Include individual figures via \input{figures/<name>}
+
+% === Architecture Stack ===
+% Shows the four actors and the trust boundary between each.
+% Place in §02 (System and Trust Model)
+
+\newcommand{\znsarchitecture}{%
+\begin{tikzpicture}[
+  node distance=1.4cm,
+  box/.style={draw, rounded corners=2pt, minimum width=2.8cm, minimum height=1.1cm, align=center, font=\small},
+  arrow/.style={-Stealth, thick},
+  label/.style={font=\scriptsize\itshape, text=gray}
+]
+
+% Actors
+\node[box, fill=gray!8]  (wallet)  {Wallet};
+\node[box, fill=gray!8, below=of wallet]  (mint)    {Mint (TEE)};
+\node[box, fill=gray!15, below=of mint]    (chain)   {Zcash chain};
+\node[box, fill=gray!8, below=of chain]  (resolver) {Resolver};
+
+% Arrows between actors
+\draw[arrow] (wallet) -- node[right, label] {request} (mint);
+\draw[arrow] (mint) -- node[right, label] {self-send} (chain);
+\draw[arrow] (chain) -- node[right, label] {scan} (resolver);
+\draw[arrow, dashed] (resolver.west) to[bend left=40] node[left, label] {resolve} (wallet.west);
+
+% Trust boundary annotations
+\node[font=\scriptsize, text=gray, right=0.3cm of mint.east, anchor=west] (t1) {attestation};
+\node[font=\scriptsize, text=gray, right=0.3cm of chain.east, anchor=west] (t2) {consensus};
+\node[font=\scriptsize, text=gray, right=0.3cm of resolver.east, anchor=west] (t3) {deterministic};
+
+\end{tikzpicture}%
+}
+
+% === Name Lifecycle State Machine ===
+% Shows the four states and transitions.
+% Place in §05 (Canonical History and State Derivation)
+
+\newcommand{\znslifecycle}{%
+\begin{tikzpicture}[
+  node distance=2.8cm,
+  state/.style={draw, circle, minimum size=1.8cm, align=center, font=\small},
+  arrow/.style={-Stealth, thick},
+  tlabel/.style={font=\scriptsize, fill=white, inner sep=2pt}
+]
+
+\node[state, fill=gray!8] (unclaimed) {un-\\claimed};
+\node[state, fill=gray!12, right=of unclaimed] (live) {live};
+\node[state, fill=gray!8, right=of live] (released) {re-\\leased};
+
+% Transitions
+\draw[arrow] (unclaimed) -- node[tlabel, above] {\action{claim}} (live);
+\draw[arrow] (live.north) to[bend left=40] node[tlabel, above] {\action{update}} (live.north);
+\draw[arrow] (live) -- node[tlabel, above] {\action{release}} (released);
+\draw[arrow] (released) to[bend left=35] node[tlabel, below] {\action{claim}} (live);
+
+% Predecessor annotations
+\node[font=\scriptsize\itshape, text=gray, below=0.1cm of unclaimed] {prev = zero};
+\node[font=\scriptsize\itshape, text=gray, below=0.1cm of live] {prev = live tip};
+\node[font=\scriptsize\itshape, text=gray, below=0.1cm of released] {prev = release tip};
+
+\end{tikzpicture}%
+}
+
+% === Predecessor Chain ===
+% Shows how prev_rcm links name notes into one continuous history.
+% Place in §05 (Canonical History and State Derivation)
+
+\newcommand{\znschain}{%
+\begin{tikzpicture}[
+  node distance=0.8cm,
+  note/.style={draw, rounded corners=2pt, minimum width=2.2cm, minimum height=0.9cm, align=center, font=\small},
+  arrow/.style={-Stealth, thick},
+  rlabel/.style={font=\scriptsize, text=gray}
+]
+
+% Name notes
+\node[note, fill=gray!8] (c1) {\action{claim}\\\scriptsize prev = $\bot$};
+\node[note, fill=gray!12, right=of c1] (u1) {\action{update}\\\scriptsize prev = rcm$_1$};
+\node[note, fill=gray!8, right=of u1] (r1) {\action{release}\\\scriptsize prev = rcm$_2$};
+\node[note, fill=gray!12, right=of r1] (c2) {\action{claim}\\\scriptsize prev = rcm$_3$};
+
+% Arrows
+\draw[arrow] (c1) -- (u1);
+\draw[arrow] (u1) -- (r1);
+\draw[arrow] (r1) -- (c2);
+
+% Derived rcm labels below
+\node[rlabel, below=0.15cm of c1] {rcm$_1$};
+\node[rlabel, below=0.15cm of u1] {rcm$_2$};
+\node[rlabel, below=0.15cm of r1] {rcm$_3$};
+\node[rlabel, below=0.15cm of c2] {rcm$_4$};
+
+% Registration period bracket
+\node[font=\scriptsize\itshape, text=gray, above=0.3cm of c1.north west, anchor=south west] {registration 1};
+\draw[gray, thick] ([yshift=0.2cm]c1.north west) -- ([yshift=0.2cm]r1.north east);
+
+\node[font=\scriptsize\itshape, text=gray, above=0.7cm of c2.north west, anchor=south west] {registration 2};
+\draw[gray, thick] ([yshift=0.85cm]c2.north west) -- ([yshift=0.85cm]c2.north east);
+
+\end{tikzpicture}%
+}
+
+\newcommand{\znsauthorizationflow}{%
+\begin{tikzpicture}[
+  node distance=1.6cm,
+  actor/.style={draw, rounded corners=2pt, minimum width=2.6cm, minimum height=1.0cm, align=center, font=\small},
+  chainbox/.style={draw, dashed, rounded corners=2pt, minimum width=2.6cm, minimum height=0.7cm, align=center, font=\small\itshape},
+  arrow/.style={-Stealth, thick},
+  label/.style={font=\scriptsize\itshape, text=gray, fill=white, inner sep=2pt}
+]
+
+\node[actor, fill=gray!8] (wallet) {Wallet};
+\node[actor, fill=gray!8, right=3.2cm of wallet] (mint) {Mint (TEE)};
+\node[chainbox, fill=gray!15, below=1.8cm of wallet, xshift=1.6cm] (chain) {Zcash chain};
+
+\draw[arrow] (wallet) -- node[label, above] {request memo} (mint);
+\draw[arrow] (mint) -- node[label, sloped, above] {OTP relay memo} (chain);
+\draw[arrow] (chain) -- node[label, sloped, above] {OTP relay memo} (wallet);
+\draw[arrow] (wallet) -- node[label, sloped, below] {request + OTP} (chain);
+\draw[arrow] (chain) -- node[label, sloped, below] {request + OTP} (mint);
+\draw[arrow, dashed] (mint) -- node[label, right] {Name Note self-send} (chain);
+
+\node[font=\scriptsize, text=gray, below=0.15cm of wallet] {controller UA};
+\node[font=\scriptsize, text=gray, below=0.15cm of mint] {OTP account};
+
+\end{tikzpicture}%
+}
+
+% === ZNS vs ENS vs Namecoin Comparison ===
+% Shows where each system places name state relative to consensus.
+% Place in §02 (System and Trust Model) or a new comparison section.
+
+\newcommand{\znscomparison}{%
+\begin{tikzpicture}[
+  node distance=0.6cm,
+  sysbox/.style={draw, rounded corners=2pt, minimum width=3.2cm, minimum height=2.4cm, align=center, font=\small},
+  consensus/.style={draw, dashed, minimum width=3.2cm, minimum height=0.8cm, align=center, font=\small\itshape, fill=gray!5},
+  arrow/.style={-Stealth, thick}
+]
+
+% Namecoin: name state inside consensus
+\node[consensus] (nc-cons) {consensus};
+\node[sysbox, fill=gray!12, below=0.1cm of nc-cons, minimum height=0.6cm] (nc-name) {name state};
+\node[font=\small\bfseries, above=0.1cm of nc-cons] {Namecoin};
+
+% ENS: name state inside consensus (contract)
+\node[consensus, right=1.5cm of nc-cons] (ens-cons) {consensus};
+\node[sysbox, fill=gray!12, below=0.1cm of ens-cons, minimum height=0.6cm] (ens-name) {contract state};
+\node[font=\small\bfseries, above=0.1cm of ens-cons] {ENS};
+
+% ZNS: name state above consensus
+\node[consensus, right=1.5cm of ens-cons] (zns-cons) {consensus};
+\node[sysbox, fill=gray!8, below=0.5cm of zns-cons, minimum height=0.6cm] (zns-name) {Mint + Resolver};
+\node[sysbox, fill=gray!12, below=0.1cm of zns-name, minimum height=0.4cm] (zns-tx) {Orchard tx};
+\node[font=\small\bfseries, above=0.1cm of zns-cons] {ZNS};
+
+\end{tikzpicture}%
+}

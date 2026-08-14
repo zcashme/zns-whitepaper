@@ -1,0 +1,95 @@
+\section{User Authorization}
+\label{sec:authorization}
+
+Zcash shielded addresses lack a standard message-signing mechanism. Even if a signature scheme existed, a raw signature does not prove temporal liveness or prevent replay attacks without a persistent, on-chain nonce registry.
+
+ZNS solves this with an in-band one-time passcode (OTP) that relies exclusively on Zcash's native encryption. The Mint encrypts a 16-byte random payload to the Unified Address currently on record. Returning that exact payload to the Mint proves two things simultaneously: cryptographic read-access to the address, and temporal liveness bounded by the OTP expiration block.
+
+A \action{claim} establishes initial state and requires no OTP. An \action{update} or \action{release} requires a valid OTP exchange before the Mint creates the Name Note \cite{zns-mint}.
+
+\begin{center}
+\znsauthorizationflow
+\end{center}
+\subsection{Authorization target}
+
+Each action uses the following authorization address:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lYY@{}}
+\toprule
+Action & Authorization address & Consequence \\
+\midrule
+\action{claim} & Proposed Unified Address & The request itself authorizes the claim; no OTP is issued. \\
+\action{update} & Unified Address in the accepted live tip & The OTP tests access to the address that currently controls the name. \\
+\action{release} & Unified Address in the accepted live tip & The OTP tests access to the address that currently controls the name. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+The active manifest MUST identify the shielded receiver type used for OTP delivery.
+The Mint selects that receiver from the controller Unified Address under ZIP~316 and rejects an address that does not contain it \cite{zip316}.
+A successful OTP response establishes that the requester can receive shielded memos sent to that receiver.
+It does not establish spending authority, control of every receiver in the Unified Address, or control of an unverified update destination.
+
+The proposed new address in an \action{update} is not verified by the OTP.
+A mistyped or attacker-substituted destination can become the live binding if wallet confirmation fails.
+
+The public Name Note account MUST NOT carry OTPs because its full viewing key is public.
+The Mint sends OTP relay memos from an account whose viewing authority is not published.
+This separation prevents disclosure through the Name Note viewing key.
+It does not hide network metadata from the Mint operator, wallet provider, or transaction-submission infrastructure.
+
+\subsection{OTP relay memo}
+
+The Mint sends the OTP to the selected receiver of the controller Unified Address in an Orchard shielded memo.
+The relay memo grammar is:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lY@{}}
+\toprule
+Non-padding bytes \\
+\midrule
+\field{ZNS:otp:<name>:<verb>:<ua>:<otp>} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+The \field{<verb>} field is \field{update} or \field{release}.
+The \field{<ua>} field is the target Unified Address from the request.
+The \field{<otp>} field is exactly 32 lowercase hexadecimal characters encoding 16 bytes.
+
+The relay memo is exactly 512 bytes and zero-padded.
+A request parser MUST reject a relay memo as a request memo because its verb is \field{otp}.
+
+\subsection{OTP properties}
+
+An OTP is 16 bytes of entropy drawn from a cryptographically secure random source inside the attested environment \cite{zns-mint}.
+The active manifest MUST fix the validity window \(N\) in blocks; the current implementation uses \(N = 24\).
+An OTP issued at block \(h\) is valid through block \(h + N\).
+
+The Mint verifies a provided OTP with constant-time equality, accepts it only for the exact \((\field{name}, \field{action}, \field{ua})\) it was issued for, and burns it on acceptance.
+A consumed OTP MUST never succeed again.
+The Mint MUST reject an expired OTP and an OTP for a mismatched transition.
+
+The active manifest MUST fix the validity window, the persistent-state format, and the maximum number of attempts.
+These values are \openstatus{} until the manifest fixes them.
+
+\subsection{Request binding}
+
+An unbound OTP could authorize a substituted request.
+The Mint binds each OTP to the exact \((\field{name}, \field{action}, \field{ua})\) tuple in the first request.
+It accepts the OTP only in a second request with the same tuple.
+
+The Mint MAY impose additional request-binding rules such as a minimum request value or a payment locator.
+Those rules are Mint policy, not independently verifiable by a Resolver.
+
+\subsection{Public verification boundary}
+
+The OTP exchange does not produce public per-request authorization evidence.
+A Resolver can verify the resulting Name Note, Mint self-send, and Mint attestation.
+It cannot reconstruct the OTP exchange from the public Name Note log.
+
+Attestation establishes that a recognized Mint identity runs approved policy under the stated TEE assumptions.
+It does not disclose a transcript proving that one OTP was delivered and consumed.
+Per-request public authorization evidence requires a separate proof construction.
+

@@ -1,0 +1,96 @@
+\section{ZNS Improvement Proposals}
+\label{sec:znsips}
+
+A source-code change cannot tell independent implementations when a new rule begins or which earlier bytes retain their old meaning.
+\zns{} therefore uses Zcash Name Service Improvement Proposals, abbreviated ZNSIPs, to specify protocol and process changes.
+The workflow follows the separation between publication, review, and deployment used by the ZIP process \cite{zip0}.
+
+\subsection{Proposal scope}
+
+One ZNSIP defines one change.
+A patch that affects only one implementation and does not affect interoperability does not require a ZNSIP.
+A change to any item below requires a Standards ZNSIP:
+
+\begin{itemize}
+  \item canonical-name or wallet-resolution rules;
+  \item memo, hash-transcript, field, or commitment encoding;
+  \item candidate validity, Mint origin, lifecycle, ordering, or reducer behavior;
+  \item authorization or attestation policy interpreted by another implementation;
+  \item activation, manifest, or migration behavior; or
+  \item a wallet or Resolver interface required for interoperability.
+\end{itemize}
+
+A Process ZNSIP changes the ZNSIP workflow or release process.
+An Informational ZNSIP records analysis without imposing a conformance requirement.
+
+\subsection{Required document fields}
+
+Every ZNSIP contains a number, title, owner list, status, category, creation date, license, discussion link, and dependency list.
+The editors assign numbers; an owner MUST NOT self-assign one.
+The repository filename is \field{znsip-NNNN.md}, where \field{NNNN} is the four-digit assigned number.
+The body contains Motivation, Specification, Rationale, Security Considerations, Privacy Considerations, Compatibility, Test Vectors, Reference Implementation, and Activation.
+A section that does not apply states why it does not apply.
+
+A Standards ZNSIP that changes bytes or cryptographic computation MUST include positive and negative cross-language vectors.
+A Standards ZNSIP that changes trusted code, attestation, key custody, or authorization MUST identify the public security review required before activation.
+A Standards ZNSIP that changes state derivation MUST define migration, rollback, and behavior across the activation boundary.
+
+\subsection{Status workflow}
+
+The permitted statuses are \state{Draft}, \state{Review}, \state{Accepted}, \state{Active}, \state{Rejected}, \state{Withdrawn}, and \state{Superseded}.
+
+\begin{description}
+  \item[\state{Draft}.] The proposal may change without preserving interoperability.
+  \item[\state{Review}.] The owners assert that the specification and required vectors are complete.
+  \item[\state{Accepted}.] The editors have recorded the review decision and its unresolved objections.
+  Acceptance does not activate the proposal.
+  \item[\state{Active}.] An active protocol manifest includes the proposal and its activation condition has been reached.
+  \item[\state{Rejected}.] The recorded decision declines the proposal.
+  \item[\state{Withdrawn}.] The owners have stopped pursuing the proposal.
+  \item[\state{Superseded}.] A later ZNSIP identifies the replacement proposal.
+\end{description}
+
+At least two editors maintain numbering, format, status records, and the versioned proposal repository.
+Editors MUST NOT use publication review to rewrite a proposal's technical decision.
+Every status change after \state{Draft} MUST identify the repository revision and a public decision record.
+The owners may move a proposal from \state{Draft} to \state{Review} after publishing the claimed-complete revision.
+The review period is at least 30 calendar days.
+After that period, at least two-thirds of the listed editors, and no fewer than two editors, must approve an \state{Accepted} or \state{Rejected} decision.
+An editor who owns the proposal does not vote on that decision and is excluded from the denominator.
+
+\subsection{Protocol manifests and activation}
+
+The encodings and reducer in this specification are portable across deployments.
+An implementation obtains its rule set from an \emph{active protocol manifest} selected by the operator or software distribution.
+Manifest selection is a software-distribution trust decision; the Zcash chain does not select a \zns{} manifest.
+
+The manifest identifies all of these values:
+
+\begin{enumerate}
+  \item a manifest identifier and predecessor manifest identifier;
+  \item the Zcash network and activation height;
+  \item every included Standards ZNSIP and its immutable content hash;
+  \item the Name Note viewing key, initial Mint-controlled note set, and scan birthday;
+  \item accepted Mint identifiers and attestation policy artifacts;
+  \item the domain tags and protocol-version values used by the included rules;
+  \item the claim-eligibility, authorization, sealed-state, and resolution parameter values fixed by this deployment; and
+  \item hashes of the conformance vectors.
+\end{enumerate}
+
+A Resolver MUST expose its manifest identifier and activation height with every resolution response.
+Two results computed under different manifests are not claims about the same protocol state.
+The manifest identifier is the lowercase hexadecimal digest of the exact published manifest bytes under unkeyed BLAKE2b with a 32-byte output and no personalization.
+Each ZNSIP content hash uses the same construction over the exact repository file bytes.
+A software release date or operator announcement is not a protocol activation rule.
+
+An accepted Standards ZNSIP has no normative effect unless an active manifest includes its exact content hash.
+At activation height, the Resolver applies the new rules to occurrences at that height and later heights.
+It MUST apply the predecessor manifest to every earlier occurrence unless the ZNSIP defines an explicit migration from the already-derived state.
+A ZNSIP MUST NOT retroactively reinterpret an earlier occurrence by silence.
+
+A memo or commitment change MUST use a new domain tag or an otherwise unambiguous version discriminator.
+A parser MUST NOT guess a version from malformed input.
+If a reorganization removes blocks at or above the activation height, the Resolver rolls back state under the rules that applied to each disconnected height and then replays the replacement chain under the same height boundary.
+
+The initial publication of this process is ZNSIP-0000.
+The initial normative protocol specification is ZNSIP-0001.

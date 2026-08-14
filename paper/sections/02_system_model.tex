@@ -1,0 +1,48 @@
+\section{Architecture}
+\label{sec:architecture}
+
+To guarantee the globally unique mapping of human-readable names to machine identifiers, a naming system requires an agreed-upon history of requests, a strict set of rules, and a final registry of owners.
+
+\zns{} treats this final registry as derived state by using Zcash exclusively for the history of requests, executing rules off-chain, and proving their enforcement on-chain.
+
+\subsection{System Components}
+
+The protocol relies on four distinct components:
+
+\begin{description}
+  \item[The Mint.] An off-chain execution environment. The Mint evaluates rules against user requests. It runs entirely inside a Trusted Execution Environment (TEE). It bundles a local Zcash node to read chain state trustlessly.
+  \item[The Name Note.] A cryptographic proof of state transition. When the Mint evaluates a valid input, it publishes a Name Note to the Zcash blockchain. The Name Note binds a specific name to a specific owner.
+  \item[The Attestation.] A hardware-generated proof of integrity. The TEE signs a remote attestation proving that the Mint's signing key is exclusively controlled by the approved protocol code.
+  \item[The Resolver.] A permissionless client. The Resolver reads the immutable sequence of Zcash transactions. It verifies the Name Notes and deterministically computes the final derived state.
+\end{description}
+
+\subsection{Attestation Constraints}
+
+The Resolver accepts a Mint execution if and only if the attestation proves five facts:
+
+\begin{enumerate}
+  \item The enclave code measurement matches the published audit manifest.
+  \item The enclave holds the authoritative Mint spending key.
+  \item The execution enforces the correct \zns{} protocol version.
+  \item The execution targets the correct Zcash network.
+  \item The enclave implements replay prevention via a protected persistent-state mechanism.
+\end{enumerate}
+
+The Resolver discards the output if an attestation fails any constraint. The Resolver discards the output if the TEE debug flag is enabled.
+
+The active manifest must identify the immutable source code revision for every approved measurement. The active manifest must identify the public audit report for every approved measurement.
+
+The rules for activation, measurement-approval, rollback-protection, upgrades, and key-rotation are \openstatus{}. This document defines the intended policy construction. It does not yet define the byte-level attestation check.
+
+\subsection{Independence of Facts}
+
+The security of the derived state relies on the strict orthogonality of its proofs. To accept a state transition, the Resolver must independently verify six distinct facts:
+
+\begin{itemize}
+  \item \textbf{Zcash validation:} The transaction satisfies Zcash consensus.
+  \item \textbf{Mint self-send:} The recognized Mint spending authority authorized the transaction.
+  \item \textbf{TEE attestation:} The recognized Mint identity executed the approved enclave code.
+  \item \textbf{Name Note verification:} One name binding tuple matches one Orchard note commitment.
+  \item \textbf{User authorization:} The user authenticated their intent via the active authorization mechanism.
+  \item \textbf{Resolver replay:} The derived state matches the canonical log under a fixed rule set.
+\end{itemize}

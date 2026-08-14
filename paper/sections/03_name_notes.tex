@@ -1,0 +1,98 @@
+\section{Name Notes}
+\label{sec:name-notes}
+
+A name transition must remain interpretable after the program that created it is gone. Its public record must therefore bind the transition to the Orchard output that carries it.
+
+\textbf{Definition.} A Name Note is an Orchard output whose memo encodes one \zns{} transition tuple and whose note commitment is derived from that tuple. The tuple binds an action, a name, a Unified Address, and a predecessor commitment.
+
+\subsection{Encoded transition}
+\label{sec:memo-parsing}
+
+The Name Note memo is a 512-byte field. A parser removes its maximal trailing sequence of zero bytes. The remaining bytes encode one transition in one of the following formats:
+
+\begin{itemize}
+  \item \field{ZNS:claim:<name>:<ua>:<prev\_rcm>}
+  \item \field{ZNS:update:<name>:<ua>:<prev\_rcm>}
+  \item \field{ZNS:release:<name>::<prev\_rcm>}
+\end{itemize}
+
+The colon byte (\field{0x3a}) separates fields. The \field{prev\_rcm} field is the 64-character lowercase hexadecimal encoding of the predecessor $\mathsf{rcm}_\sigma$. The first \action{claim} uses 64 zeroes.
+
+\subsection{Committed tuple}
+
+The memo is an encoding. The commitment input is the tuple extracted from it. A valid memo maps to $\sigma=(\alpha,n,u,p)$:
+
+\begin{description}
+  \item[$\alpha$] The exact ASCII bytes \action{claim}, \action{update}, or \action{release}.
+  \item[$n$] The raw bytes of the \field{name} field.
+  \item[$u$] The raw bytes of the \field{ua} field (empty for \action{release}).
+  \item[$p$] The 32 raw bytes decoded from \field{prev\_rcm}.
+\end{description}
+
+\subsection{Commitment inputs}
+
+To prevent ambiguous concatenation, define \field{LP(x)} as the four-byte unsigned little-endian byte length of \field{x}, followed by \field{x} itself. Define the protocol domain tag \(T\) as the 12 ASCII bytes \field{ZcashName/v1}.
+Quotation marks are not part of \(T\).
+
+For field tag \(t\), define the domain-separated hash
+
+\begin{align*}
+H_t(\sigma) = \operatorname{BLAKE2b\text{-}512}\bigl(&
+  \operatorname{LP}(T) \parallel \operatorname{LP}(t) \parallel
+  \operatorname{LP}(\alpha) \parallel \operatorname{LP}(n) \\
+&\parallel \operatorname{LP}(u) \parallel p\bigr).
+\end{align*}
+
+The final \(p\) is exactly 32 raw bytes and has no length prefix.
+Each \(H_t\) invocation uses unkeyed BLAKE2b-512 with a 64-byte output and no additional personalization.
+The field tag is the ASCII byte string \field{rcm} or \field{psi}.
+
+The two derived values are
+
+\begin{align*}
+\mathsf{rcm}_\sigma &= \mathsf{ToScalar}\bigl(H_{\mathtt{rcm}}(\sigma)\bigr), \\
+\psi_\sigma &= \mathsf{ToBase}\bigl(H_{\mathtt{psi}}(\sigma)\bigr).
+\end{align*}
+
+The value \(\mathsf{rcm}_\sigma\) is the Pallas scalar-field element used as the Orchard note-commitment randomness.
+The value \(\psi_\sigma\) is the Pallas base-field element included in the Orchard note commitment.
+\(\mathsf{ToScalar}\), \(\mathsf{ToBase}\), and the field types are those defined for Orchard by the Zcash Protocol Specification \cite{zcash-protocol,zip224}.
+Neither value is a raw 64-byte BLAKE2b digest; each is the field element obtained by reducing its separately tagged digest.
+The canonical encoding of either field element is its 32-byte little-endian field representation.
+ZNS derives both field elements from \(\sigma\), not from the decrypted \field{rseed} used by ordinary Orchard receiving \cite{zip212,zcash-protocol}.
+
+Changing the domain tag, a field tag, field order, length width, byte order, hash parameters, or reduction rule changes the protocol version and requires new test vectors.
+
+\subsection{Commitment reconstruction}
+
+ZNS replaces the ordinary derivation of \(\psi\) and \(\mathsf{rcm}\). It does not change the Orchard commitment construction.
+
+A verifier supplies \(\psi_\sigma\), \(\mathsf{rcm}_\sigma\), and the candidate's remaining note components to the standard Orchard construction \cite{zcash-protocol,zip224}. It accepts the Name Note only if the result equals the \field{cmx} in the on-chain Orchard action.
+
+\subsection{Name Note verification}
+
+The equality proves one fact: the tuple encoded in the memo is bound to that Orchard output. It does not establish Mint origin, user authorization, policy compliance, or the current state of the namespace.
+
+\subsection{Required test vector}
+
+For \field{action=claim}, \field{name=alice}, \field{ua=u1xxx}, and a 32-byte zero predecessor, the canonical field encodings are:
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lY@{}}
+\toprule
+Value & Canonical little-endian bytes rendered as hexadecimal \\
+\midrule
+\(\psi_\sigma\) & \hexfield{bde12553f1d349d9ca6836f6711a256cd353fc2376d5d861324766845bcfbd08} \\
+\(\mathsf{rcm}_\sigma\) & \hexfield{ab91154ea92a1796a0d088e4909ab7f72b0e20896a130c5bb53910044565b020} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+This vector tests the commitment primitive only.
+The string \field{u1xxx} is not a valid ZIP~316 Unified Address, so this tuple MUST fail candidate validation before state reduction.
+
+Set \field{g\_d} to 32 bytes of \field{0x11} and \field{pk\_d} to 32 bytes of \field{0x22}.
+Set the value to zero and \field{rho} to 32 bytes of \field{0x33}.
+The resulting \field{cmx} is \hexfield{53accd0df1c569731e8ad4fc8bcb483b953e3713ecc7a95202442daa026c4a02}.
+An implementation that produces another value is non-conforming.
+
