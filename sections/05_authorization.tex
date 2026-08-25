@@ -22,10 +22,10 @@ An update MAY specify the currently bound Unified Address as the target address 
 The Mint delivers the OTP in an Ironwood shielded memo. The non-padding bytes are:
 
 \begin{verbatim}
-ZNS:otp:<name>:<verb>:<ua>:<otp>
+ZNS:otp:<otp>:<name>:<verb>:<ua>
 \end{verbatim}
 
-The \texttt{<verb>} field is \texttt{update} or \texttt{release}. The \texttt{<ua>} field is the target Unified Address from the request. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes.
+The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes. The \texttt{<name>} field is the name being updated or released. The \texttt{<verb>} field is \texttt{update} or \texttt{release}. The \texttt{<ua>} field is the target Unified Address from the request.
 
 The memo is exactly 512 bytes and zero-padded. The \texttt{otp} message type distinguishes it from a name request, and a request parser MUST reject it as such.
 
