@@ -1,13 +1,24 @@
-# ZNS Whitepaper
+# Zcash Name Service
+### A Deterministic, Attested Name Registry on Zcash
 
-This repository contains the whitepaper for the Zcash Naming System (ZNS).
-**Note: This is currently a Work In Progress (WIP) and subject to significant changes.**
+**Julian Abraham** — julian@zcash.me · **James Joseph** — james@zcash.me  
+[github.com/zcashme](https://github.com/zcashme)
 
-The LaTeX paper begins at [`paper/main.tex`](paper/main.tex). Build it with:
+| | |
+|---|---|
+| **License** | MIT |
+| **Discussion** | [github.com/zcashme/zns-whitepaper](https://github.com/zcashme/zns-whitepaper) |
+
+---
+
+> 📄 **Read the paper:** [zcashme.github.io/zns-whitepaper](https://zcashme.github.io/zns-whitepaper/)
+
+---
+
+## Build
 
 ```sh
-cd paper
 tectonic main.tex
 ```
 
-The numbered Markdown documents are design contexts. They remain source material for the paper until each protocol rule is incorporated and reviewed.
+Produces `main.pdf`.
