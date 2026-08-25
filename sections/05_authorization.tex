@@ -55,8 +55,6 @@ The Mint MUST also reject an OTP presented for a different bound transition, an 
 
 OTP expiration is independent of registration expiration and the liveness deadline.
 
-Under the TEE assumptions, attestation establishes that the Mint executed the approved authorization procedure.
-
 \subsection{Public verification boundary}
 
 The OTP exchange does not produce public evidence of user authorization. A Resolver can verify the resulting Name Note, including the \field{expires\_at} value committed by an \action{update}, as well as Mint authorization and attestation, but it cannot reconstruct the OTP exchange or independently verify that the OTP was bound to that transition from the on-chain Name Note history.
