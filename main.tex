@@ -29,6 +29,7 @@
 \setlength{\parskip}{0.65em}
 \renewcommand{\arraystretch}{1.18}
 \setlength{\emergencystretch}{1em}
+\addtolength{\topmargin}{-0.4in}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 
@@ -42,7 +43,8 @@
 \newcommand{\fixedstatus}{\textsc{Fixed}}
 
 \title{\textbf{Zcash Name Service}\\
-\large A Deterministic Name Registry over the Orchard Transaction Log}
+\large A Deterministic Name Registry over the Ironwood Transaction Log}
+
 \author{craftsoldier\\
 \href{https://github.com/craftsoldier}{github.com/craftsoldier} \quad \href{mailto:julian@zcash.me}{julian@zcash.me}}
 \date{Protocol draft \textemdash{} \today}
@@ -64,8 +66,8 @@
 \begin{abstract}
 Zcash payments use encoded addresses, but Zcash consensus does not assign human-readable names to them.
 Existing on-chain naming systems cannot be ported to Zcash: transparent registries such as Namecoin publish the namespace in the clear, leaking the address graph Zcash exists to hide; contract-based registries such as ENS require general-purpose on-chain state that Zcash consensus does not provide.
-The Zcash Name Service (\zns) maps each Zcash name to a Unified Address over the ordinary Zcash transaction log: each binding is recorded in the memo of an Orchard action, decryptable with the Name Note account's published full viewing key, and anchored by an Orchard note commitment derived from the same tuple.
-Zcash consensus supplies canonical order and finality; a deterministic reducer derives the registry; the bound Unified Address inherits Orchard shielding.
+The Zcash Name Service (\zns) maps each Zcash name to a Unified Address over the ordinary Zcash transaction log: each binding is recorded in the memo of an Ironwood action, decryptable with the Name Note account's published full viewing key, and anchored by an Ironwood note commitment derived from the same tuple.
+Zcash consensus supplies canonical order and finality; a deterministic reducer derives the registry; the bound Unified Address inherits Ironwood shielding.
 Authorization is delivered by an attested Mint; a future off-chain zero-knowledge name circuit would replace that assumption with a proof.
 \end{abstract}
 
@@ -104,7 +106,7 @@ Zcash Improvement Proposal 212.
 
 \bibitem{zip224}
 Zcash Improvement Proposal 224.
-\emph{Orchard Shielded Protocol}.
+\emph{Ironwood Shielded Protocol}.
 \url{https://zips.z.cash/zip-0224}.
 
 \bibitem{zip316}
