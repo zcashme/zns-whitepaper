@@ -1,0 +1,30 @@
+\section{Architecture}
+\label{sec:architecture}
+
+To guarantee the globally unique mapping of human-readable names to Zcash addresses, a naming system requires an agreed-upon history of requests to register, modify, or release names, a strict set of rules, and a resulting registry of name bindings. \zns{} treats this registry as derived state by using Zcash exclusively for the history of these requests, executing rules off-chain, and binding their accepted results on-chain.
+
+\subsection{System Components}
+
+The protocol relies on three distinct components:
+
+\textbf{The Mint.} The authoritative off-chain program that evaluates the naming policy. It runs inside a Trusted Execution Environment (TEE), with its authority bound to approved protocol code through remote attestation. It uses its own Zcash node to read chain state independently.
+
+\textbf{The Name Note.} An Ironwood output used to record a name transition on-chain.
+
+\textbf{The Resolver.} A permissionless client that reads the canonical sequence of Zcash transactions, verifies Name Notes and deterministically derives registry state.
+
+\subsection{Independence of Facts}
+
+The security of the derived state relies on six distinct properties. The Resolver verifies publicly reconstructible properties directly and relies on Mint attestation for policy checks that are not publicly reconstructible.
+
+\textbf{Zcash validity:} The transaction satisfies Zcash consensus.
+
+\textbf{Mint authorization:} The recognized Mint spending key authorized the transaction.
+
+\textbf{TEE attestation:} The recognized Mint identity executed the approved enclave code.
+
+\textbf{Name Note verification:} The transition tuple encoded in a Name Note matches its Ironwood note commitment.
+
+\textbf{User authorization:} The attested Mint enforces the authorization procedure defined in Section~\ref{sec:authorization}.
+
+\textbf{State derivation:} Resolvers reading the canonical Zcash chain under identical protocol parameters derive the same registry state.
