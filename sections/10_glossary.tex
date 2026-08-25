@@ -21,7 +21,7 @@ Mint authorization & Authorization provided by the recognized Mint spending key 
 Resolver & A client that scans the canonical Zcash chain using the Name Note viewing key, verifies Name Note candidates, derives registry state according to Section~\ref{sec:resolver}, and provides current and historical binding state, including committed expiration values. \\
 User authorization & The OTP procedure used to authorize an \action{update} or \action{release}. For an \action{update}, the OTP is bound to the resulting \texttt{(name, action, ua, expires\_at)} values; see Section~\ref{sec:authorization}. \\
 One-time passcode (OTP) & A six-digit decimal passcode sent by the Mint to the Ironwood receiver of the Unified Address currently bound to a name and returned to authorize an \action{update} or \action{release}; see Section~\ref{sec:authorization}. \\
-OTP relay memo & An Ironwood shielded memo of the form \texttt{ZNS:otp:<name>:<verb>:<ua>:<otp>} used to deliver an OTP; see Section~\ref{sec:authorization}. \\
+OTP relay memo & An Ironwood shielded memo of the form \texttt{ZNS:otp:<otp>:<name>:<verb>:<ua>} used to deliver an OTP; see Section~\ref{sec:authorization}. \\
 Expiration (\field{expires\_at}) & The absolute Unix timestamp in whole seconds committed by a \action{claim} or \action{update} Name Note, or the exact value \texttt{none} for a registration without fixed expiration. \\
 Registration term & A duration requested for an initial fixed-term registration or renewal. The user supplies a term; the Mint computes the resulting absolute \field{expires\_at}. \\
 Median Time Past (MTP) & The chain-derived time value obtained from the canonical Zcash chain and used by the Mint for protocol-defined time checks. \\
