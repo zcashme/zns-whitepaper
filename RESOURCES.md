@@ -55,6 +55,8 @@
 
 ## Gaps
 
+- Local numbered design-doc directories (`1_naming_systems`, `2_privacy_and_identity`, `3_shielded_names`, `4_name_history`) have been removed; no local primary source docs remain.
+- `paper/` has been emptied and its contents (`main.tex`, `sections/`, `figures/`, `watch.sh`) relocated to the repo root.
 - The repository needs primary implementation sources for the existing ZNS system, including message examples and resolver behavior.
 - The proposed `orchard-zns`, Mint, and Resolver repositories are not yet recorded here.
 - A named cryptographic reviewer or protocol-engineering review process has not been recorded.
