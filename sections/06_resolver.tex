@@ -31,6 +31,7 @@ Before state derivation, the Resolver verifies two properties of each Name Note 
 User authorization is not independently reconstructed by the Resolver. As described in Section~\ref{sec:authorization}, the OTP exchange does not produce public evidence of an individual authorization event. Under the TEE assumptions, the Resolver relies on Mint attestation to establish that the approved authorization procedure was executed.
 
 \subsection{State derivation}
+\label{sec:resolver-state}
 
 The Resolver processes verified Name Note candidates in ascending canonical block order. Within a block, candidates are ordinarily processed according to transaction and action order, subject to the same-block release precedence rule below.
 
