@@ -1,0 +1,34 @@
+\section{Trust Assumptions}
+\label{sec:trust-assumptions}
+
+\zns{} relies on the following trust assumptions:
+
+\subsection{Zcash consensus}
+
+\zns{} assumes that Zcash consensus provides the canonical ordering and availability of Name Notes. Registry history can be reconstructed from that chain without relying on the Mint to preserve a separate database.
+
+\zns{} treats Median Time Past derived from the canonical Zcash chain as the authoritative time source for Mint-enforced protocol periods.
+
+\subsection{TEE security}
+
+\zns{} assumes that the selected TEE correctly executes the approved Mint code, protects the Mint spending key, and provides trustworthy remote attestation. This includes enforcement of claim eligibility, authorization, lifecycle, and pricing rules, correct calculation of \field{expires\_at}, and correct use of canonical-chain MTP for expiration, liveness, and OTP validity.
+
+A compromise of these properties could allow the Mint policy to be bypassed or unauthorized Name Notes to be created, but it would not allow previously confirmed Name Notes to be removed or rewritten outside Zcash consensus.
+
+\subsection{User viewing access}
+
+\zns{} assumes that the current controller retains viewing access to the Ironwood receiver of the bound Unified Address. This access is required to complete \action{update} and \action{release} authorization and to satisfy the liveness requirement. \zns{} does not require or verify spending authority over that receiver.
+
+Loss of viewing access prevents the controller from authorizing subsequent changes or satisfying the liveness requirement.
+
+\subsection{Price data}
+
+If registration pricing depends on external market data, \zns{} assumes that the price data supplied to the Mint is available and accurate enough to apply the pricing policy. Incorrect price data can affect registration prices but cannot alter previously recorded Name Notes.
+
+\subsection{Protected-name access}
+
+During a protection period, \zns{} assumes that access codes are issued only to authorized claimants and remain unavailable to unauthorized parties. Disclosure or improper issuance of a valid access code can allow a protected name to be claimed before the protection period ends.
+
+\subsection{Mint availability}
+
+\zns{} assumes that the Mint remains available to evaluate requests and create required lifecycle \action{release} Name Notes. If the Mint becomes unavailable, existing registry state remains reconstructible, but new transitions cannot occur. An expiration or liveness deadline may be reached while the Mint is unavailable, but reaching the deadline does not itself change registry state. The registration remains in the derived registry until the required \action{release} Name Note is accepted on the canonical Zcash chain.
