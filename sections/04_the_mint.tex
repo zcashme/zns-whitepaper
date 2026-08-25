@@ -1,39 +1,166 @@
 \section{The Mint}
 \label{sec:the-mint}
 
-A Name Note proves that a transition is bound to an Orchard output. It cannot determine whether the transition was allowed. That decision requires the namespace's current state and its policy.
-
-The Mint is the single authoritative program that makes this decision. It reads ordered requests from Zcash, derives the accepted namespace state, and applies the active policy. For an accepted request, it emits a self-send containing the resulting Name Note.
+The Mint is the protocol's single registrar. A Name Note establishes that a transition is bound to an Ironwood output, but whether the transition is allowed depends on the current registry state and active naming policy. The Mint reads ordered requests on Zcash, derives that state, applies the policy, and for each accepted request spends a Mint-controlled note to create the successor Name Note.
 
 \subsection{Authority bound to policy}
 
-The Mint spending key authorizes every accepted transition. Whoever can use that key can create an apparently valid Name Note without applying the policy. The key must therefore be available only to the program that evaluates the policy.
+The Mint spending key provides the protocol's Mint authorization. The key can create a transition that appears to have been approved by the Mint without applying the naming policy. The key must therefore be usable only by the program that evaluates the policy.
 
-The Mint runs inside a Trusted Execution Environment (TEE). Its remote attestation binds the Mint key to an approved enclave measurement. A Resolver accepts a Mint self-send only when the active manifest approves that measurement.
+\zns{} runs the Mint inside a Trusted Execution Environment (TEE) and uses remote attestation to bind the Mint key to an approved enclave measurement. This shifts trust in policy execution and key custody from the Mint operator to the TEE attestation system and its hardware root of trust.
 
-This replaces trust in the Mint operator with trust in the TEE attestation system and its hardware root of trust.
+\subsection{Attestation constraints}
 
-\subsection{Policy input and output}
+The Resolver recognizes Mint authorization only if the attestation establishes all of the following:
 
-The Mint evaluates each request against the state derived from the accepted Zcash chain. It must use its own Zcash node and its own replay of the namespace history. It must not rely on a third-party state oracle.
+\begin{enumerate}
+  \item The enclave code measurement is approved by the current \zns{} deployment.
+  \item The enclave controls the recognized Mint spending key.
+  \item The enclave runs the applicable \zns{} protocol version.
+  \item The enclave targets the applicable Zcash network.
+  \item The enclave implements the required protected persistent-state mechanism for replay prevention.
+  \item The enclave obtains canonical-chain Median Time Past from the approved Zcash node interface and uses it as the authoritative time source for protocol-defined time checks.
+\end{enumerate}
 
-For each request, the active policy decides whether to emit a successor Name Note. The policy includes the following constraints:
+The Resolver rejects the Mint authorization if any condition fails or if the TEE is not running in an approved production security configuration.
 
-\begin{description}
-  \item[Namespace policy.] The Mint decides whether a name is claimable, live, renewable, or released. It rejects a transition that conflicts with the accepted state.
-  \item[Economic policy.] The Mint calculates the required payment from the requested name and registration interval. It rejects a request without the required payment.
-  \item[Request validity.] The Mint rejects malformed names, invalid Unified Addresses, and transitions prohibited by the active namespace policy.
-  \item[Authorization.] An \action{update} or \action{release} requires the OTP exchange defined in Section~\ref{sec:authorization}.
-\end{description}
+Approved enclave measurements, attestation requirements, and the approved source of canonical-chain Median Time Past are deployment-specific. The exact attestation format and verification procedure depend on the selected TEE platform and remain \openstatus{} until the deployment is fixed.
 
-\subsection{On-chain record}
+\subsection{Claim eligibility}
 
-The Resolver must be able to derive the namespace without the Mint. A Name Note therefore carries the complete transition tuple on-chain. The Mint must not replace a tuple field with an off-chain pointer.
+Some names may be designated as protected for a limited protection period to reduce impersonation, misleading claims of affiliation, and opportunistic registration of names associated with existing identities or projects.
 
-The encoded transition must fit in one 512-byte Orchard memo. The Mint rejects a request whose Name Note exceeds that limit. A multi-memo encoding requires an activated ZNSIP.
+A protected name is temporarily excluded from the standard public claim process. During the protection period, a claim must include a valid access code, which the Mint verifies according to the protected-name policy before accepting the claim.
 
-\subsection{The Active Manifest}
+Access-code verification is performed by the Mint under the attested protected-name policy and is not independently reconstructed by the Resolver.
 
-The Active Manifest fixes the policy parameters and the accepted enclave measurements. These parameters include pricing, registration intervals, namespace restrictions, and OTP configuration.
+When the protection period ends, an unclaimed protected name becomes eligible for the standard public claim process. Once a protected name is validly claimed, it is governed by the same transition and authorization rules as any other name.
 
-The manifest identifies the immutable source revision and audit report for each measurement. A policy upgrade requires a new approved measurement. The activation and rollback rules are \openstatus{}.
+\subsection{Request evaluation}
+
+The Mint evaluates each request against the registry state it derives from the canonical Zcash chain. It must use its own Zcash node and its own replay of the namespace history rather than rely on a third-party state oracle. The Mint obtains canonical-chain Median Time Past from that node for protocol-defined time checks.
+
+The Mint evaluates each request against the following requirements:
+
+\begin{itemize}
+  \item \textbf{Namespace state.} The requested change must be permitted by the current state of the name.
+  \item \textbf{Payment.} The request must satisfy the price and payment requirements defined by the active pricing policy.
+  \item \textbf{Request validity.} The name, Unified Address when applicable, requested registration term or extension when applicable, and resulting encoded transition must satisfy the protocol's validity rules.
+  \item \textbf{Lifecycle policy.} The request must satisfy the active registration, expiration, renewal, and liveness rules defined in Section~\ref{sec:the-mint-lifecycle}.
+  \item \textbf{User authorization.} An \action{update} or controller-requested \action{release} must complete the authorization procedure defined in Section~\ref{sec:authorization}. A lifecycle \action{release} created by the Mint to enforce expiration or liveness does not require user authorization.
+\end{itemize}
+
+If all applicable requirements are satisfied, the Mint accepts the request and creates the resulting Name Note.
+
+\subsection{Name lifecycle}
+\label{sec:the-mint-lifecycle}
+
+\zns{} uses canonical-chain Median Time Past (MTP) rather than block counts or local system time for protocol-defined lifecycle periods. MTP is derived from Zcash block timestamps and has one-second granularity. It is chain-derived time rather than exact wall-clock time.
+
+\subsubsection{Initial claims}
+
+A \action{claim} request specifies the name, the Unified Address, and either a requested registration term or no fixed expiration. The user does not supply an absolute \field{expires\_at} value.
+
+For a fixed-term registration, the Mint computes \field{expires\_at} by adding the requested registration term to the canonical-chain MTP of the block containing the accepted claim request.
+
+The Mint determines \field{expires\_at} from that block MTP and the requested registration term, subject to the active registration policy, and records the resulting value in the Name Note.
+
+For a registration without a fixed expiration, \field{expires\_at} is the exact ASCII value \texttt{none}.
+
+Only the resulting \field{expires\_at} value is included in the Name Note. The claim request's block MTP and requested registration term are policy inputs and are not repeated as transition fields.
+
+\subsubsection{Expiration}
+
+For a fixed-term registration, the expiration condition is reached when:
+
+$$\text{canonical\_chain\_mtp} \geq \text{expires\_at}.$$
+
+Reaching \field{expires\_at} does not directly modify derived registry state. When the expiration condition is reached, the Mint MUST create a \action{release} Name Note.
+
+The registration remains active in derived registry state until a \action{release} Name Note is accepted on the canonical Zcash chain, subject to the same-block precedence rule defined in Section~\ref{sec:resolver-state}.
+
+A registration whose \field{expires\_at} value is \texttt{none} has no fixed expiration but remains subject to the liveness requirement.
+
+\subsubsection{Updates and renewals}
+
+An ordinary \action{update} does not require the user to provide \field{expires\_at}. The Mint reads the current accepted registration state and carries the current \field{expires\_at} into the successor Name Note.
+
+An ordinary \action{update} MUST NOT extend, shorten, restart, or remove the current registration period.
+
+An \action{update} MAY request a registration extension. The user supplies the requested additional term, not an absolute expiration timestamp.
+
+For a finite registration:
+
+$$\text{new\_expires\_at} = \text{current\_expires\_at} + \text{requested\_term}.$$
+
+If no extension is requested:
+
+$$\text{new\_expires\_at} = \text{current\_expires\_at}.$$
+
+If the current \field{expires\_at} is \texttt{none}, an ordinary term extension does not change it.
+
+The extension is added to the existing \field{expires\_at}, rather than to the current time.
+
+Once the expiration condition has been reached, the Mint MUST NOT accept a new renewal request and MUST create the required \action{release} Name Note.
+
+An update or renewal affects the registration only if its Name Note is accepted in a block preceding any \action{release} Name Note that ends the registration.
+
+If an \action{update} and \action{release} for the same current registration are accepted in the same block and both reference the same predecessor, the \action{release} takes precedence regardless of the update's purpose or resulting \field{expires\_at}.
+
+If the \action{release} is accepted in an earlier block, the registration has ended and a later \action{update} does not affect registry state.
+
+An \action{update} MAY retain the currently bound Unified Address. Such an update may be used for renewal, liveness confirmation, or both.
+
+\subsubsection{Liveness}
+
+The Mint is responsible for tracking and enforcing liveness.
+
+The current \zns{} deployment MUST fix the liveness interval $L$ in seconds.
+
+For a registration whose most recent liveness time is $\tau$, the liveness deadline is:
+
+$$\text{liveness\_deadline} = \tau + L.$$
+
+The initial liveness interval begins when the \action{claim} Name Note is accepted on the canonical Zcash chain. A successfully authorized \action{update} resets the liveness interval when the resulting Name Note is accepted on the canonical chain, including an update that retains the currently bound Unified Address.
+
+The liveness time of a \action{claim} or \action{update} is derived from the canonical-chain MTP associated with the block containing that accepted Name Note.
+
+The Mint records the most recent successful liveness event in protected persistent state and derives the next liveness deadline using canonical-chain MTP. If a chain reorganization removes or changes a \action{claim} or \action{update} used to establish the current liveness time, the Mint MUST reconcile its protected lifecycle state with the replacement canonical chain before enforcing the resulting liveness deadline.
+
+Requesting an OTP does not satisfy liveness. A failed, expired, or incomplete OTP exchange does not satisfy liveness. A liveness interval resets only when the resulting \action{update} Name Note is accepted on the canonical Zcash chain.
+
+If the required liveness interval passes without a successful liveness event, the Mint MUST create a \action{release} Name Note.
+
+For a fixed-term registration, the Mint MUST create a release when either the committed \field{expires\_at} is reached or the liveness requirement fails, whichever occurs first.
+
+An \action{update} affects the registration only if it is accepted in a block preceding the required \action{release}. If the update and release are accepted in the same block and reference the same current predecessor, the release takes precedence.
+
+Liveness enforcement is performed by the attested Mint and is not part of the Resolver's required state-derivation procedure.
+
+\subsubsection{Release conditions}
+
+The Mint MUST create a \action{release} Name Note when any of the following occurs:
+
+\begin{enumerate}
+  \item the controller successfully completes the required authorization procedure for an explicit \action{release};
+  \item canonical-chain MTP reaches the committed \field{expires\_at}; or
+  \item the current liveness deadline is reached without an accepted \action{update} Name Note having reset the liveness interval.
+\end{enumerate}
+
+The first condition is a controller-requested release and requires the OTP authorization procedure defined in Section~\ref{sec:authorization}. The second and third conditions are lifecycle releases created by the Mint and do not require user authorization.
+
+Reaching an expiration or liveness deadline does not itself modify registry state. Registry state changes only when the resulting \action{release} Name Note is accepted on the canonical Zcash chain.
+
+An \action{update} affects the current registration only if it is accepted in a block preceding the \action{release}. If an \action{update} and \action{release} referencing the same current predecessor are accepted in the same block, the \action{release} takes precedence.
+
+After a \action{release}, a subsequent \action{claim} begins a new registration and uses the zero predecessor defined in Section~\ref{sec:name-notes}.
+
+\subsection{On-chain completeness}
+
+A Resolver must be able to reconstruct registry state from the on-chain Name Note history without relying on the Mint as a data source. Every accepted transition must therefore be fully represented in its Name Note. The Mint must not omit a transition field or replace it with an off-chain pointer.
+
+For a \action{claim} or \action{update}, the resulting \field{expires\_at} is part of the transition and MUST be present in the Name Note. The requested registration term, requested extension, and MTP values used by the Mint to apply lifecycle policy are policy inputs and need not be repeated in the Name Note.
+
+For a \action{release}, the Name Note records the Unified Address of the binding being released.
+
+The protocol's validity limits on names, Unified Addresses, and other encoded fields MUST ensure that every valid \zns{} transition fits within a single 512-byte Name Note memo.
