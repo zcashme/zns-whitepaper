@@ -1,21 +1,45 @@
 \section{The Resolver}
 \label{sec:resolver}
 
-The Zcash chain records candidate Name Notes. It does not identify which candidates were authorized by the Mint or which transition is current.
+The Zcash chain records Name Notes in canonical order, but it does not determine which transitions belong in the registry. A Resolver verifies each Name Note and applies accepted transitions to derive registry state.
 
-The Resolver derives this state from the canonical chain. It is permissionless. Two Resolvers that scan the same canonical chain under the same active manifest must derive the same registry.
+Anyone can independently run a Resolver. Resolvers reading the same canonical Zcash chain under the current protocol rules must derive the same registry state.
 
-\subsection{Scanning}
+\subsection{Resolver responsibilities}
 
-Standard Orchard wallets reject Name Notes because ZNS derives \(\psi\) and \(\mathsf{rcm}\) from the transition tuple rather than from the ordinary ZIP-212 \field{rseed} derivation. A Resolver uses a dedicated scanner and the published Name Note full viewing key.
+A Resolver must:
 
-For each candidate output, the Resolver performs three checks:
+\begin{enumerate}
+  \item scan the canonical Zcash chain using the Mint's published full viewing key to identify and decrypt Ironwood outputs, obtaining their memos and note components;
+  \item parse the decrypted outputs to identify Name Note candidates;
+  \item verify each candidate's note commitment using the ZNS-specific derivation of $\mathsf{rcm}$ and $\psi$ defined in Section~\ref{sec:name-notes};
+  \item verify Mint authorization and attestation as specified in Section~\ref{sec:the-mint};
+  \item apply accepted transitions in canonical order to derive registry state; and
+  \item provide clients with the current and historical binding state of each name, including the \field{expires\_at} value committed by the applicable Name Note.
+\end{enumerate}
 
-\begin{description}
-  \item[Decryption.] The Resolver obtains the memo and note components by authenticated decryption, bypassing the standard ZIP-212 receiving check.
-  \item[Name Note verification.] The Resolver parses the memo and reconstructs the Orchard commitment as specified in Section~\ref{sec:name-notes}.
-  \item[Mint origin.] The Resolver accepts the candidate only if its creating Orchard action spends a note from the recognized Mint-controlled unspent set.
-\end{description}
+If a chain reorganization changes the canonical Zcash history, the Resolver MUST roll back any state derived from removed blocks and replay the replacement chain from the common ancestor.
 
-For every accepted Name Note, the Resolver updates the Mint-controlled unspent set and follows the \field{prev\_rcm} link for the affected name. When the best chain changes, it rolls back to the common ancestor and replays the replacement chain.
+\subsection{Candidate verification}
 
+Before state derivation, the Resolver verifies two properties of each Name Note candidate:
+
+\textbf{1. Name Note verification.} The Resolver parses the encoded transition and reconstructs the note commitment as specified in Section~\ref{sec:name-notes}. The candidate passes Name Note verification only if the reconstructed note commitment matches the \field{cmx} recorded on-chain.
+
+\textbf{2. Mint authorization.} The Resolver uses the Mint's published viewing key to identify Name Notes created by the Mint and verifies the Mint's attestation as specified in Section~\ref{sec:the-mint}.
+
+User authorization is not independently reconstructed by the Resolver. As described in Section~\ref{sec:authorization}, the OTP exchange does not produce public evidence of an individual authorization event. Under the TEE assumptions, the Resolver relies on Mint attestation to establish that the approved authorization procedure was executed.
+
+\subsection{State derivation}
+
+The Resolver processes verified Name Note candidates in ascending canonical block order. Within a block, candidates are ordinarily processed according to transaction and action order, subject to the same-block release precedence rule below.
+
+For each name, the \field{prev\_rcm} field links a transition to the preceding Name Note within the current registration. A \action{claim}, including one following a \action{release}, uses the zero predecessor defined in Section~\ref{sec:name-notes}. An \action{update} or \action{release} is accepted only if its \field{prev\_rcm} matches the \field{rcm} of the current accepted Name Note.
+
+If the same block contains both one or more \action{update} candidates and one or more \action{release} candidates for the same name that reference the \field{rcm} of the same current accepted Name Note, the Resolver considers the \action{release} candidates before the competing \action{update} candidates regardless of their relative transaction order within that block.
+
+If more than one competing \action{release} references that predecessor, the releases are considered according to transaction and action order. Once one release is accepted, the registration ends and the remaining competing transitions referencing the former predecessor do not affect registry state.
+
+An \action{update} therefore affects the registration only if it is accepted in a block preceding the block containing a competing \action{release}. An update accepted in the same block as that release does not affect registry state.
+
+Each accepted transition updates the registry state for that name. A transition whose predecessor does not match the current accepted state does not affect the registry.
