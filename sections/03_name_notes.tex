@@ -70,22 +70,18 @@ This equality establishes only that the transition encoded in the memo is crypto
 
 For a \texttt{claim} transition with \texttt{name=alice}, \texttt{expires\_at=none}, and a 32-byte zero predecessor. Key material is derived from the all-zero 32-byte seed under unified account $\mathtt{m/32'/133'/1'}$, diversifier index 0, external scope, mainnet:
 
-\begin{center}
-\begin{tabularx}{\textwidth}{@{}lY@{}}
-\toprule
-Value & Canonical little-endian bytes rendered as hexadecimal \\
-\midrule
-\texttt{ua} & \path{u1897y9pzw3zk6n9twtzu2z5kpkzw3hms2c54fpyv8lnr79m73tazljkk3veaxrtwncp66lf45p3f274xy2amqckx0sraje4v835yw8q0q} \\
-\texttt{g\_d} & \texttt{de4338f2ab9fd8300a3a1c20dd690ce27026c6001c295d7c641a067ce809b11e} \\
-\texttt{pk\_d} & \texttt{6df609f5710f3b5deecd4ee4b8f0173b44af6cf8918ac00269526031ba628996} \\
-$\psi_\sigma$ & \texttt{9f8a61b860c737d4564f12c635d654b843bc7115d9dc6cf6f09e409c81b8d13e} \\
-$\mathsf{rcm}_\sigma$ & \texttt{daa928be21d0ec13b5dbb0244699dbfeba546c71591d24d7824db78e4670c504} \\
-\bottomrule
-\end{tabularx}
-\end{center}
+\noindent\texttt{ua}: \nolinkurl{u1897y9pzw3zk6n9twtzu2z5kpkzw3hms2c54fpyv8lnr79m73tazljkk3veaxrtwncp66lf45p3f274xy2amqckx0sraje4v835yw8q0q}
+
+\noindent\texttt{g\_d}: \nolinkurl{de4338f2ab9fd8300a3a1c20dd690ce27026c6001c295d7c641a067ce809b11e}
+
+\noindent\texttt{pk\_d}: \nolinkurl{6df609f5710f3b5deecd4ee4b8f0173b44af6cf8918ac00269526031ba628996}
+
+\noindent$\psi_\sigma$: \nolinkurl{9f8a61b860c737d4564f12c635d654b843bc7115d9dc6cf6f09e409c81b8d13e}
+
+\noindent$\mathsf{rcm}_\sigma$: \nolinkurl{daa928be21d0ec13b5dbb0244699dbfeba546c71591d24d7824db78e4670c504}
 
 Set the value to zero and $\rho$ to 32 bytes of \texttt{0x33}. The resulting \texttt{cmx} is \texttt{cc320736a0c1df1e4ffcee2b64aa73a9e6d06bb218e155a6fef422e1ecb1f70c}. An implementation that produces another value is non-conforming.
 
 The complete memo encoding of this transition is:
 
-\path{ZNS:claim:alice:u1897y9pzw3zk6n9twtzu2z5kpkzw3hms2c54fpyv8lnr79m73tazljkk3veaxrtwncp66lf45p3f274xy2amqckx0sraje4v835yw8q0q:none:0000000000000000000000000000000000000000000000000000000000000000}
+\nolinkurl{ZNS:claim:alice:u1897y9pzw3zk6n9twtzu2z5kpkzw3hms2c54fpyv8lnr79m73tazljkk3veaxrtwncp66lf45p3f274xy2amqckx0sraje4v835yw8q0q:none:0000000000000000000000000000000000000000000000000000000000000000}

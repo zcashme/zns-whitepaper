@@ -3,11 +3,14 @@
 
 Terms defined in the body are collected here for reference. Their normative definitions remain in the referenced sections.
 
-\begin{center}
-\begin{tabularx}{\textwidth}{@{}L{0.28\textwidth}Y@{}}
+\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.26\textwidth}p{0.70\textwidth}@{}}
 \toprule
 Term & Definition \\
 \midrule
+\endhead
+\bottomrule
+\endfoot
 \zns{} (Zcash Name Service) & The name registry protocol specified by this document. \\
 Name Note & An Ironwood output whose memo records a name transition, including its \field{expires\_at} value, and whose \zns{}-specific note-commitment inputs are derived from that transition; see Section~\ref{sec:name-notes}. \\
 Transition & A \action{claim}, \action{update}, or \action{release} recorded in a Name Note and represented by the tuple $\sigma$; see Section~\ref{sec:name-notes}. \\
@@ -30,5 +33,4 @@ Liveness deadline & The current liveness time plus the protocol-defined liveness
 ZNSIP & A \zns{} Improvement Proposal specifying a proposed protocol change; see Section~\ref{sec:znsips}. \\
 External terms inherited from the Zcash protocol specification \cite{zcash-protocol} or its ZIPs are not redefined here: Ironwood action, Ironwood memo, note commitment (\field{cmx}), Unified Address, and incoming viewing key retain the meaning fixed by their normative sources \cite{zip224,zip316,zcash-protocol}. \\
 \bottomrule
-\end{tabularx}
-\end{center}
+\end{longtable}
