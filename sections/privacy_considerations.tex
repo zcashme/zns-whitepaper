@@ -1,0 +1,10 @@
+\section{Privacy Considerations}
+\label{sec:privacy}
+
+\zns{} does not provide registration privacy, resolution-query privacy, or protection against a Resolver presenting a client with stale chain state.
+
+The Name Note account's published full viewing key allows anyone to read the \zns{} registry history, including names, \action{claim}, \action{update}, and \action{release} transitions, associated Unified Addresses, committed \field{expires\_at} values when present, and predecessor references. \zns{} therefore does not hide name bindings or their history.
+
+Information outside the Name Note history may also be observable. The Mint can observe requests and authorization exchanges. A remotely queried Resolver can observe the names requested by a client. Wallet providers and network observers may observe connection metadata such as IP addresses and request timing, depending on how the client accesses \zns{}.
+
+Publishing a Unified Address as a name binding does not expose the shielded payments sent to that address or create a public transaction history for those payments.
