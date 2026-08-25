@@ -1,0 +1,35 @@
+\section{Glossary}
+\label{sec:glossary}
+
+Terms defined in the body are collected here for reference. Their normative definitions remain in the referenced sections.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}L{0.28\textwidth}Y@{}}
+\toprule
+Term & Definition or defining section \\
+\midrule
+\zns{} (Zcash Name Service) & The protocol this document specifies; see Section~\ref{sec:motivation}. \\
+Zcash name & The wallet-facing string \field{n.zcash} for a canonical name \field{n}; see Section~\ref{sec:canonical-names}. \\
+Canonical name & The byte string from which a \zns{} name is built; see Section~\ref{sec:canonical-names}. \\
+Name Note & An Ironwood output whose memo carries one canonical \zns{} tuple and whose note commitment is derived from the same tuple; see Section~\ref{sec:name-notes}. \\
+Action & One of \action{claim}, \action{update}, or \action{release}; see Section~\ref{sec:name-notes}. \\
+Predecessor (\field{prev\_rcm}) & The 32-byte $\mathsf{rcm}_\sigma$ of the accepted prior Name Note for the same name, encoded as 64 lowercase hex characters; see Section~\ref{sec:name-notes}. \\
+Accepted tip & The most recently accepted Name Note for a given name at a canonical chain position; see Section~\ref{sec:history}. \\
+Binding (current binding) & The Unified Address in the accepted live tip, or none while released; see Section~\ref{sec:binding}. \\
+Wallet & Requests a name action and completes the authorization exchange; see Section~\ref{sec:architecture}. \\
+Mint & Performs the policy checks in Section~\ref{sec:mint-responsibilities} before creating a Name Note; runs inside a TEE; see Section~\ref{sec:architecture}. \\
+Mint authorization & Authorization provided by the recognized Mint spending key and accepted subject to the attestation requirements in Section~\ref{sec:the-mint}; see Section~\ref{sec:the-mint}. \\
+Resolver & A permissionless client that scans the canonical Zcash chain, verifies Name Note candidates, derives registry state, and provides binding state; see Section~\ref{sec:resolver}. \\
+User authorization & The OTP procedure used to authorize an \action{update} or \action{release}; see Section~\ref{sec:authorization}. \\
+One-time passcode (OTP) & A six-digit decimal passcode delivered by the Mint to authorize an \action{update} or \action{release}; see Section~\ref{sec:authorization}. \\
+OTP relay memo & An Ironwood shielded memo of the form \texttt{ZNS:otp:<name>:<verb>:<ua>:<otp>}; see Section~\ref{sec:authorization}. \\
+Expiration (\field{expires\_at}) & The absolute Unix timestamp in whole seconds committed by a \action{claim} or \action{update} Name Note, or \texttt{none}; see Section~\ref{sec:the-mint}. \\
+Registration term & A duration requested for an initial fixed-term registration or renewal; see Section~\ref{sec:the-mint}. \\
+Median Time Past (MTP) & The chain-derived time value used by the Mint for protocol-defined time checks; see Section~\ref{sec:the-mint}. \\
+Liveness time & The canonical-chain MTP of the accepted \action{claim} or most recent \action{update}; see Section~\ref{sec:the-mint}. \\
+Liveness deadline & The current liveness time plus the protocol-defined interval; see Section~\ref{sec:the-mint}. \\
+ZNSIP & A ZNS Improvement Proposal specifying a proposed protocol change; see Section~\ref{sec:znsips}. \\
+External terms inherited from the Zcash protocol specification \cite{zcash-protocol} or its ZIPs are not redefined here: Ironwood action, Ironwood memo, note commitment (\field{cmx}), Unified Address, and incoming viewing key retain the meaning fixed by their normative sources \cite{zip224,zip316,zcash-protocol}. \\
+\bottomrule
+\end{tabularx}
+\end{center}
