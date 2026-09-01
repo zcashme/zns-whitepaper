@@ -13,20 +13,20 @@ Term & Definition \\
 \endfoot
 \zns{} (Zcash Name Service) & The name registry protocol specified by this document. \\
 Name Note & An Ironwood output whose memo records a name transition, including its \field{expires\_at} value, and whose \zns{}-specific note-commitment inputs are derived from that transition; see Section~\ref{sec:name-notes}. \\
+Request memo & An Ironwood memo asking the Mint to evaluate a \action{claim}, \action{update}, or \action{release}. An \action{update} or \action{release} may append a trailing OTP field to return an authorization challenge; see Section~\ref{sec:requests} and Section~\ref{sec:authorization}. \\
 Transition & A \action{claim}, \action{update}, or \action{release} recorded in a Name Note and represented by the tuple $\sigma$; see Section~\ref{sec:name-notes}. \\
 Predecessor (\field{prev\_rcm}) & The \field{rcm} of the previously accepted Name Note for the same name, encoded as 64 lowercase hexadecimal characters. The initial claim uses 64 zeroes; see Section~\ref{sec:name-notes}. \\
 Binding & The association between a name and a Unified Address established by its accepted Name Note history. \\
 Registry state & The set of name bindings derived from accepted Name Notes in canonical chain order; see Section~\ref{sec:resolver}. \\
 Name Note viewing key & The published full viewing key for the Mint account used to create Name Notes. \\
-Name Note candidate & A decrypted Ironwood output identified by the Resolver as a possible Name Note before all acceptance checks are complete; see Section~\ref{sec:resolver}. \\
 Mint & The protocol's single registrar. It evaluates name requests under the naming policy and creates Name Notes for accepted requests; see Section~\ref{sec:the-mint}. \\
 Mint authorization & Authorization provided by the recognized Mint spending key and accepted subject to the attestation requirements in Section~\ref{sec:the-mint}. \\
-Resolver & A client that scans the canonical Zcash chain using the Name Note viewing key, verifies Name Note candidates, derives registry state according to Section~\ref{sec:resolver}, and provides current and historical binding state, including committed expiration values. \\
-User authorization & The OTP procedure used to authorize an \action{update} or \action{release}. For an \action{update}, the OTP is bound to the resulting \texttt{(name, action, ua, expires\_at)} values; see Section~\ref{sec:authorization}. \\
+Resolver & A client that scans the canonical Zcash chain using the Name Note viewing key, verifies Name Notes, derives registry state according to Section~\ref{sec:resolver}, and provides current and historical binding state, including committed expiration values. \\
+User authorization & The two-step OTP procedure used to authorize an \action{update} or controller-requested \action{release}. For an \action{update}, the OTP is bound to \texttt{(name, action, ua, expires\_at)}; see Section~\ref{sec:authorization}. \\
 One-time passcode (OTP) & A six-digit decimal passcode sent by the Mint to the Ironwood receiver of the Unified Address currently bound to a name and returned to authorize an \action{update} or \action{release}; see Section~\ref{sec:authorization}. \\
 OTP relay memo & An Ironwood shielded memo of the form \texttt{ZNS:otp:<otp>:<name>:<verb>:<ua>} used to deliver an OTP; see Section~\ref{sec:authorization}. \\
 Expiration (\field{expires\_at}) & The absolute Unix timestamp in whole seconds committed by a \action{claim} or \action{update} Name Note, or the exact value \texttt{none} for a registration without fixed expiration. \\
-Registration term & A duration requested for an initial fixed-term registration or renewal. The user supplies a term; the Mint computes the resulting absolute \field{expires\_at}. \\
+Registration term & A duration requested for an initial fixed-term registration or renewal. The user supplies a term; the Mint computes the resulting absolute \field{expires\_at}; see Section~\ref{sec:the-mint-lifecycle}. \\
 Median Time Past (MTP) & The chain-derived time value obtained from the canonical Zcash chain and used by the Mint for protocol-defined time checks. \\
 Liveness time & The canonical-chain MTP associated with the block containing the accepted \action{claim} or most recent accepted \action{update} for a registration. \\
 Liveness deadline & The current liveness time plus the protocol-defined liveness interval. Reaching the deadline requires the Mint to create a \action{release} Name Note. \\

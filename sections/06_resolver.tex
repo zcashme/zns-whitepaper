@@ -11,8 +11,8 @@ A Resolver must:
 
 \begin{enumerate}
   \item scan the canonical Zcash chain using the Mint's published full viewing key to identify and decrypt Ironwood outputs, obtaining their memos and note components;
-  \item parse the decrypted outputs to identify Name Note candidates;
-  \item verify each candidate's note commitment using the ZNS-specific derivation of $\mathsf{rcm}$ and $\psi$ defined in Section~\ref{sec:name-notes};
+  \item parse the decrypted outputs to identify Name Notes;
+  \item verify each Name Note's commitment using the ZNS-specific derivation of $\mathsf{rcm}$ and $\psi$ defined in Section~\ref{sec:name-notes};
   \item verify Mint authorization and attestation as specified in Section~\ref{sec:the-mint};
   \item apply accepted transitions in canonical order to derive registry state; and
   \item provide clients with the current and historical binding state of each name, including the \field{expires\_at} value committed by the applicable Name Note.
@@ -20,11 +20,11 @@ A Resolver must:
 
 If a chain reorganization changes the canonical Zcash history, the Resolver MUST roll back any state derived from removed blocks and replay the replacement chain from the common ancestor.
 
-\subsection{Candidate verification}
+\subsection{Verification}
 
-Before state derivation, the Resolver verifies two properties of each Name Note candidate:
+Before state derivation, the Resolver verifies two properties of each Name Note:
 
-\textbf{1. Name Note verification.} The Resolver parses the encoded transition and reconstructs the note commitment as specified in Section~\ref{sec:name-notes}. The candidate passes Name Note verification only if the reconstructed note commitment matches the \field{cmx} recorded on-chain.
+\textbf{1. Commitment verification.} The Resolver parses the encoded transition and reconstructs the note commitment as specified in Section~\ref{sec:name-notes}. The Name Note passes commitment verification only if the reconstructed note commitment matches the \field{cmx} recorded on-chain.
 
 \textbf{2. Mint authorization.} The Resolver uses the Mint's published viewing key to identify Name Notes created by the Mint and verifies the Mint's attestation as specified in Section~\ref{sec:the-mint}.
 
@@ -33,11 +33,11 @@ User authorization is not independently reconstructed by the Resolver. As descri
 \subsection{State derivation}
 \label{sec:resolver-state}
 
-The Resolver processes verified Name Note candidates in ascending canonical block order. Within a block, candidates are ordinarily processed according to transaction and action order, subject to the same-block release precedence rule below.
+The Resolver processes verified Name Notes in ascending canonical block order. Within a block, they are ordinarily processed according to transaction and action order, subject to the same-block release precedence rule below.
 
 For each name, the \field{prev\_rcm} field links a transition to the preceding Name Note within the current registration. A \action{claim}, including one following a \action{release}, uses the zero predecessor defined in Section~\ref{sec:name-notes}. An \action{update} or \action{release} is accepted only if its \field{prev\_rcm} matches the \field{rcm} of the current accepted Name Note.
 
-If the same block contains both one or more \action{update} candidates and one or more \action{release} candidates for the same name that reference the \field{rcm} of the same current accepted Name Note, the Resolver considers the \action{release} candidates before the competing \action{update} candidates regardless of their relative transaction order within that block.
+If the same block contains both one or more \action{update} Name Notes and one or more \action{release} Name Notes for the same name that reference the \field{rcm} of the same current accepted Name Note, the Resolver considers the \action{release} Name Notes before the competing \action{update} Name Notes regardless of their relative transaction order within that block.
 
 If more than one competing \action{release} references that predecessor, the releases are considered according to transaction and action order. Once one release is accepted, the registration ends and the remaining competing transitions referencing the former predecessor do not affect registry state.
 

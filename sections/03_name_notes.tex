@@ -5,7 +5,11 @@ A Name Note is an Ironwood output whose memo records a name transition by encodi
 
 \subsection{Memo encoding}
 
-The Name Note memo is a 512-byte field. A parser removes its maximal trailing sequence of zero bytes. The remaining bytes encode one transition in one of the following formats:
+The Name Note memo is a 512-byte field. A parser removes its maximal trailing sequence of zero bytes. The remaining bytes MUST be UTF-8. The colon byte (\texttt{0x3a}) separates fields. The first field MUST be the exact ASCII bytes \texttt{ZNS}. Extra fields, missing fields, and empty required fields are rejected.
+
+The name field MUST contain between 1 and 63 bytes, each of which is ASCII \texttt{a}--\texttt{z}, \texttt{0}--\texttt{9}, or hyphen (\texttt{0x2d}). The first and last bytes MUST NOT be hyphen.
+
+The remaining bytes encode one transition in one of the following formats:
 
 \begin{center}
 \texttt{ZNS:claim:<name>:<ua>:<expires\_at>:<prev\_rcm>}\\
@@ -13,9 +17,13 @@ The Name Note memo is a 512-byte field. A parser removes its maximal trailing se
 \texttt{ZNS:release:<name>:<ua>:none:<prev\_rcm>}
 \end{center}
 
-The colon byte (\texttt{0x3a}) separates fields. The \texttt{<expires\_at>} field is either the canonical ASCII decimal encoding of a Unix timestamp in whole seconds or the exact ASCII bytes \texttt{none}. The value \texttt{none} indicates that the registration has no fixed expiration. A \texttt{release} MUST encode \texttt{none} as its \texttt{expires\_at} value and the Unified Address of the binding being released as its \texttt{ua} value.
+The \texttt{<expires\_at>} field is either the canonical ASCII decimal encoding of a Unix timestamp in whole seconds or the exact ASCII bytes \texttt{none}. The value \texttt{none} indicates that the registration has no fixed expiration. A \texttt{release} MUST encode \texttt{none} as its \texttt{expires\_at} value and the Unified Address of the binding being released as its \texttt{ua} value.
+
+% TODO: Mint still encodes/parses release Name Notes as ZNS:release:<name>::none:<prev_rcm> (empty UA), so u in σ is empty. zns-verify matches this section.
 
 The \texttt{prev\_rcm} field is the 64-character lowercase hexadecimal encoding of the predecessor Name Note's \texttt{rcm} value. The first claim uses 64 zeroes.
+
+A Name Note parser MUST reject a memo that does not match one of these encodings.
 
 \subsection{Transition representation}
 
@@ -44,6 +52,8 @@ $$H_t(\sigma) = \mathsf{BLAKE2b{-}512}( \mathsf{LP}(T) \parallel \mathsf{LP}(t) 
 
 Because $e$ is included in $\sigma$, both ZNS-specific commitment inputs cryptographically bind the \texttt{expires\_at} value recorded in the Name Note.
 
+% TODO: zns-resolver's verify call does not yet pass expires_at into H_t.
+
 The final $p$ is exactly 32 raw bytes and has no length prefix. Each $H_t$ invocation uses unkeyed BLAKE2b-512 with a 64-byte output and no additional personalization.
 
 The two commitment inputs are then:
@@ -60,7 +70,7 @@ Changing the domain tag, a derivation tag, field order, length width, byte order
 
 \subsection{Commitment verification}
 
-ZNS changes the derivation of $\psi$ and $\mathsf{rcm}$ but does not otherwise change the standard note commitment construction. A verifier derives $\psi_\sigma$ and $\mathsf{rcm}_\sigma$ from the encoded transition, combines them with the candidate's remaining note components using the standard construction \cite{zcash-protocol,zip224}, and reconstructs the note commitment.
+ZNS changes the derivation of $\psi$ and $\mathsf{rcm}$ but does not otherwise change the standard note commitment construction. A verifier derives $\psi_\sigma$ and $\mathsf{rcm}_\sigma$ from the encoded transition, combines them with the remaining note components using the standard construction \cite{zcash-protocol,zip224}, and reconstructs the note commitment.
 
 The Name Note passes commitment verification only if the reconstructed value equals the \field{cmx} recorded in the on-chain action.
 

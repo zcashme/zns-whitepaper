@@ -1,0 +1,29 @@
+\section{User requests}
+\label{sec:requests}
+
+A request memo asks the Mint to evaluate a name change. It is not a Name Note and does not bind a transition to a note commitment.
+
+\subsection{Request encoding}
+
+The request memo is a 512-byte field. A parser removes its maximal trailing sequence of zero bytes. The remaining bytes MUST be UTF-8. The colon byte (\texttt{0x3a}) separates fields. The first field MUST be the exact ASCII bytes \texttt{ZNS}. Extra fields, missing fields, and empty required fields are rejected.
+
+The name field MUST contain between 1 and 63 bytes, each of which is ASCII \texttt{a}--\texttt{z}, \texttt{0}--\texttt{9}, or hyphen (\texttt{0x2d}). The first and last bytes MUST NOT be hyphen.
+
+The remaining bytes encode one request in one of the following formats:
+
+\begin{center}
+\texttt{ZNS:claim:<name>:<ua>}\\
+\texttt{ZNS:update:<name>:<ua>}\\
+\texttt{ZNS:update:<name>:<ua>:<otp>}\\
+\texttt{ZNS:release:<name>:<ua>}\\
+\texttt{ZNS:release:<name>:<ua>:<otp>}
+\end{center}
+
+A \action{claim}, \action{update}, or \action{release} request MUST include a non-empty Unified Address. A \action{claim} MUST NOT include an OTP field. Request memos do not encode \field{expires\_at} or \field{prev\_rcm}.
+
+% TODO: Mint request parsers do not yet encode a registration term; see Section~\ref{sec:the-mint-lifecycle}.
+% TODO: zns-verify request parsers still use ZNS:release:<name> with no UA and reject an OTP field. Intake follows this section.
+
+An \action{update} or \action{release} without an OTP field is the first step of the authorization exchange specified in Section~\ref{sec:authorization}. The same request with a trailing \texttt{<otp>} field returns the OTP. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes.
+
+A request parser MUST reject any memo that does not match one of the request formats above, including an OTP relay memo as specified in Section~\ref{sec:authorization}.
