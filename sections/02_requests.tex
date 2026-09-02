@@ -22,7 +22,6 @@ The remaining bytes encode one request in one of the following formats:
 A \action{claim}, \action{update}, or \action{release} request MUST include a non-empty Unified Address. A \action{claim} MUST NOT include an OTP field. Request memos do not encode \field{expires\_at} or \field{prev\_rcm}.
 
 % TODO: Mint request parsers do not yet encode a registration term; see Section~\ref{sec:the-mint-lifecycle}.
-% TODO: zns-verify request parsers still use ZNS:release:<name> with no UA and reject an OTP field. Intake follows this section.
 
 An \action{update} or \action{release} without an OTP field is the first step of the authorization exchange specified in Section~\ref{sec:authorization}. The same request with a trailing \texttt{<otp>} field returns the OTP. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes.
 

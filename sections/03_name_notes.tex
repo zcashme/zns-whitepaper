@@ -19,8 +19,6 @@ The remaining bytes encode one transition in one of the following formats:
 
 The \texttt{<expires\_at>} field is either the canonical ASCII decimal encoding of a Unix timestamp in whole seconds or the exact ASCII bytes \texttt{none}. The value \texttt{none} indicates that the registration has no fixed expiration. A \texttt{release} MUST encode \texttt{none} as its \texttt{expires\_at} value and the Unified Address of the binding being released as its \texttt{ua} value.
 
-% TODO: Mint still encodes/parses release Name Notes as ZNS:release:<name>::none:<prev_rcm> (empty UA), so u in σ is empty. zns-verify matches this section.
-
 The \texttt{prev\_rcm} field is the 64-character lowercase hexadecimal encoding of the predecessor Name Note's \texttt{rcm} value. The first claim uses 64 zeroes.
 
 A Name Note parser MUST reject a memo that does not match one of these encodings.
@@ -51,8 +49,6 @@ For derivation tag $t$, where $t$ is the exact ASCII byte string \texttt{rcm} or
 $$H_t(\sigma) = \mathsf{BLAKE2b{-}512}( \mathsf{LP}(T) \parallel \mathsf{LP}(t) \parallel \mathsf{LP}(\alpha) \parallel \mathsf{LP}(n) \parallel \mathsf{LP}(u) \parallel \mathsf{LP}(e) \parallel p ).$$
 
 Because $e$ is included in $\sigma$, both ZNS-specific commitment inputs cryptographically bind the \texttt{expires\_at} value recorded in the Name Note.
-
-% TODO: zns-resolver's verify call does not yet pass expires_at into H_t.
 
 The final $p$ is exactly 32 raw bytes and has no length prefix. Each $H_t$ invocation uses unkeyed BLAKE2b-512 with a 64-byte output and no additional personalization.
 

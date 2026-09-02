@@ -24,8 +24,6 @@ The controller returns the OTP by sending an OTP-bearing request to the same tre
 
 The name payment is on that OTP-bearing note. The note MUST satisfy the price and payment requirements of the active pricing policy. The first request funds only OTP delivery; it is not the name price.
 
-% TODO: Mint process_transition does not yet check value on the OTP-bearing request note.
-
 The OTP is bound to the requested transition, expires after a fixed time interval measured using canonical-chain MTP, and is consumed on successful use. Receipt of the correct OTP within that window demonstrates both the ability to decrypt shielded messages sent to the selected receiver and temporal liveness.
 
 For an update, authorization does not verify control of the proposed new Unified Address. A valid but unintended or substituted Unified Address can therefore become the new binding.
@@ -51,8 +49,6 @@ OTP relay memos are sent from the Mint treasury account. That account's viewing 
 The Mint generates each OTP uniformly from \texttt{000000} through \texttt{999999} using a cryptographically secure random source inside the attested environment \cite{zns-mint}.
 
 For an \action{update}, the Mint computes the resulting \field{expires\_at} before issuing the OTP and binds the OTP to the exact \texttt{(name, action, ua, expires\_at)} tuple in its protected state.
-
-% TODO: Mint binds the OTP to (name, action, ua, current Name Note rcm), not expires_at.
 
 For an ordinary update, \field{expires\_at} is the current accepted expiration value carried forward unchanged. For a renewal, \field{expires\_at} is the value obtained by adding the requested additional term to the current accepted expiration.
 
