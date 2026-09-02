@@ -40,7 +40,7 @@ The Mint delivers the OTP in an Ironwood shielded memo. The non-padding bytes ar
 ZNS:otp:<otp>:<name>:<verb>:<ua>
 \end{verbatim}
 
-The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes. The \texttt{<name>} field is the name being updated or released. The \texttt{<verb>} field is \texttt{update} or \texttt{release}. The \texttt{<ua>} field is the target Unified Address from the request.
+The six-digit code is the first field after the message type so a wallet displays it without the controller scanning later fields. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes. The \texttt{<name>} field is the name being updated or released. The \texttt{<verb>} field is \texttt{update} or \texttt{release}. The \texttt{<ua>} field is the target Unified Address from the request.
 
 The memo is exactly 512 bytes and zero-padded. The \texttt{otp} message type distinguishes it from a name request as specified in Section~\ref{sec:requests}, and a request parser MUST reject it as such.
 
