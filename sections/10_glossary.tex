@@ -13,7 +13,7 @@ Term & Definition \\
 \endfoot
 \zns{} (Zcash Name Service) & The name registry protocol specified by this document. \\
 Name Note & An Ironwood output whose memo records a name transition, including its \field{expires\_at} value, and whose \zns{}-specific note-commitment inputs are derived from that transition; see Section~\ref{sec:name-notes}. \\
-Request memo & An Ironwood memo asking the Mint to evaluate a \action{claim}, \action{update}, or \action{release}. An \action{update} or \action{release} may append a trailing OTP field to return an authorization challenge; see Section~\ref{sec:requests} and Section~\ref{sec:authorization}. \\
+Request memo & An Ironwood memo asking the Mint to evaluate a \action{claim}, \action{update}, or \action{release}. An \action{update} or \action{release} may append a trailing OTP field when returning the code to the Mint; see Section~\ref{sec:requests} and Section~\ref{sec:authorization}. \\
 Transition & A \action{claim}, \action{update}, or \action{release} recorded in a Name Note and represented by the tuple $\sigma$; see Section~\ref{sec:name-notes}. \\
 Predecessor (\field{prev\_rcm}) & The \field{rcm} of the previously accepted Name Note for the same name, encoded as 64 lowercase hexadecimal characters. The initial claim uses 64 zeroes; see Section~\ref{sec:name-notes}. \\
 Binding & The association between a name and a Unified Address established by its accepted Name Note history. \\

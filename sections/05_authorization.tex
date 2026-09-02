@@ -58,8 +58,6 @@ For a controller-requested \action{release}, the OTP remains bound to the applic
 
 The current \zns{} deployment MUST fix the OTP validity duration $D_{\text{OTP}}$ in seconds and the maximum number of verification attempts.
 
-% TODO: Mint currently measures OTP validity as 24 blocks from issuance height, not MTP + D_OTP.
-
 If an OTP is issued when canonical-chain MTP is $\tau$, define:
 
 $$\text{otp\_expires\_at} = \tau + D_{\text{OTP}}.$$
@@ -74,6 +72,6 @@ OTP expiration is independent of registration expiration and the liveness deadli
 
 \subsection{Public verification boundary}
 
-The OTP exchange does not produce public evidence of user authorization. The Resolver and the verification kernel reconstruct registry state from Name Notes. They do not parse OTP relay memos or OTP-bearing request memos. A Resolver can perform commitment verification of the resulting Name Note, including the \field{expires\_at} value committed by an \action{update}, and can verify Mint authorization and attestation, but it cannot reconstruct the OTP exchange or independently verify that the OTP was bound to that transition from the on-chain Name Note history.
+The OTP exchange is not part of the public Name Note history. The Resolver derives registry state from Name Notes. It can check the resulting note, including the \field{expires\_at} committed by an \action{update}, and Mint authorization and attestation. It cannot recover the OTP, or prove from those notes that an OTP was issued for that transition.
 
-Under the TEE assumptions, attestation establishes that the Mint executed the approved authorization procedure.
+Under the TEE assumptions, attestation is what establishes that the Mint ran the approved authorization procedure.

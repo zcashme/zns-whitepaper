@@ -23,6 +23,6 @@ A \action{claim}, \action{update}, or \action{release} request MUST include a no
 
 % TODO: Mint request parsers do not yet encode a registration term; see Section~\ref{sec:the-mint-lifecycle}.
 
-An \action{update} or \action{release} without an OTP field is the first step of the authorization exchange specified in Section~\ref{sec:authorization}. The same request with a trailing \texttt{<otp>} field returns the OTP. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes.
+An \action{update} or \action{release} without an OTP field is the first step of the authorization exchange specified in Section~\ref{sec:authorization}. The same request with a trailing \texttt{<otp>} field is how the controller returns the OTP. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes.
 
 A request parser MUST reject any memo that does not match one of the request formats above, including an OTP relay memo as specified in Section~\ref{sec:authorization}.
