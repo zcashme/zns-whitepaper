@@ -7,7 +7,7 @@ A request memo asks the Mint to evaluate a name change. It is not a Name Note an
 
 The request memo is a 512-byte field. A parser removes its maximal trailing sequence of zero bytes. The remaining bytes MUST be UTF-8. The colon byte (\texttt{0x3a}) separates fields. The first field MUST be the exact ASCII bytes \texttt{ZNS}. Extra fields, missing fields, and empty required fields are rejected.
 
-The name field MUST contain between 1 and 63 bytes, each of which is ASCII \texttt{a}--\texttt{z}, \texttt{0}--\texttt{9}, or hyphen (\texttt{0x2d}). The first and last bytes MUST NOT be hyphen.
+The name field MUST contain between 1 and 63 bytes, each of which is ASCII \texttt{a}--\texttt{z} or \texttt{0}--\texttt{9}.
 
 The remaining bytes encode one request in one of the following formats:
 
