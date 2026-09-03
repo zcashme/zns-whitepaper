@@ -1,7 +1,7 @@
 \section{The Mint}
 \label{sec:the-mint}
 
-The Mint is the protocol's single registrar. A Name Note establishes that a transition is bound to an Ironwood output, but whether the transition is allowed depends on the current registry state and active naming policy. The Mint reads ordered request memos on Zcash, encoded as specified in Section~\ref{sec:requests}, derives that state, applies the policy, and for each accepted request spends a Mint-controlled note to create the successor Name Note.
+The Mint is the protocol's single registrar. A Name Note establishes that a transition is bound to an Ironwood output, but whether the transition is allowed depends on the current registry state and active naming policy. The Mint reads ordered Request and Respond memos on Zcash, encoded as specified in Section~\ref{sec:requests}, derives that state, applies the policy, and for each accepted Request or Respond spends a Mint-controlled note to create the successor Name Note.
 
 \subsection{Authority bound to policy}
 
@@ -44,8 +44,8 @@ The Mint evaluates each request against the following requirements:
 
 \begin{itemize}
   \item \textbf{Namespace state.} The requested change must be permitted by the current state of the name.
-  \item \textbf{Payment.} The request must satisfy the price and payment requirements defined by the active pricing policy. For a \action{claim}, that payment is the claim request note. For an \action{update} or controller-requested \action{release}, that payment is the OTP-bearing request note specified in Section~\ref{sec:authorization}.
-  \item \textbf{Request validity.} The request memo must satisfy Section~\ref{sec:requests}. The name, Unified Address when applicable, requested registration term or extension when applicable, and resulting encoded transition must satisfy the protocol's validity rules.
+  \item \textbf{Payment.} The memo must satisfy the price and payment requirements defined by the active pricing policy. For a \action{claim}, that payment is the Request. For an \action{update} or controller-requested \action{release}, that payment is the Respond specified in Section~\ref{sec:authorization}.
+  \item \textbf{Request validity.} The Request or Respond must satisfy Section~\ref{sec:requests}. The name, Unified Address when applicable, requested registration term or extension when applicable, and resulting encoded transition must satisfy the protocol's validity rules.
   \item \textbf{Lifecycle policy.} The request must satisfy the active registration, expiration, renewal, and liveness rules defined in Section~\ref{sec:the-mint-lifecycle}.
   \item \textbf{User authorization.} An \action{update} or controller-requested \action{release} must complete the authorization procedure defined in Section~\ref{sec:authorization}. A lifecycle \action{release} created by the Mint to enforce expiration or liveness does not require user authorization.
 \end{itemize}
@@ -131,7 +131,7 @@ The liveness time of a \action{claim} or \action{update} is derived from the can
 
 The Mint records the most recent successful liveness event in protected persistent state and derives the next liveness deadline using canonical-chain MTP. If a chain reorganization removes or changes a \action{claim} or \action{update} used to establish the current liveness time, the Mint MUST reconcile its protected lifecycle state with the replacement canonical chain before enforcing the resulting liveness deadline.
 
-Requesting an OTP does not satisfy liveness. A failed, expired, or incomplete OTP exchange does not satisfy liveness. A liveness interval resets only when the resulting \action{update} Name Note is accepted on the canonical Zcash chain.
+A Request or Relay does not satisfy liveness. A failed, expired, or incomplete Respond does not satisfy liveness. A liveness interval resets only when the resulting \action{update} Name Note is accepted on the canonical Zcash chain.
 
 If the required liveness interval passes without a successful liveness event, the Mint MUST create a \action{release} Name Note.
 

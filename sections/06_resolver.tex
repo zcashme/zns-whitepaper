@@ -28,7 +28,7 @@ Before state derivation, the Resolver verifies two properties of each Name Note:
 
 \textbf{2. Mint authorization.} The Resolver uses the Mint's published viewing key to identify Name Notes created by the Mint and verifies the Mint's attestation as specified in Section~\ref{sec:the-mint}.
 
-User authorization is not independently reconstructed by the Resolver. As described in Section~\ref{sec:authorization}, the OTP exchange does not produce public evidence of an individual authorization event. Under the TEE assumptions, the Resolver relies on Mint attestation to establish that the approved authorization procedure was executed.
+User authorization is not independently reconstructed by the Resolver. As described in Section~\ref{sec:authorization}, Request, Relay, and Respond are not part of the public Name Note history. Under the TEE assumptions, the Resolver relies on Mint attestation to establish that the approved authorization procedure was executed.
 
 \subsection{State derivation}
 \label{sec:resolver-state}

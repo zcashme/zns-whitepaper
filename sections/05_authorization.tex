@@ -7,22 +7,22 @@ A \action{claim} has no existing controller and therefore requires no OTP.
 
 A lifecycle \action{release} created by the Mint to enforce expiration or liveness does not require an OTP.
 
-\subsection{Authorization exchange}
+\subsection{Request, Relay, and Respond}
 
-An \action{update} or controller-requested \action{release} is a two-step exchange.
+An \action{update} or controller-requested \action{release} is three memos: Request, Relay, and Respond.
 
-The controller first submits the request memo specified in Section~\ref{sec:requests}, with no OTP field, as an Ironwood output to the Mint's treasury account. That request note MUST have value exactly two ZIP-317 marginal fee units for a two-action Ironwood bundle \cite{zip317}. The Mint spends the request note: one unit is the network fee, and one unit is delivered to the current controller with the OTP relay memo. The Mint retains no relay value.
+\textbf{Request.} The controller submits the Request specified in Section~\ref{sec:requests} as an Ironwood output to the Mint's treasury account. That note MUST have value exactly two ZIP-317 marginal fee units for a two-action Ironwood bundle \cite{zip317}. The Mint spends the Request: one unit is the network fee, and one unit is delivered to the current controller with the Relay. The Mint retains no Relay value.
 
-The Mint then sends the OTP relay memo to the Ironwood receiver contained in the Unified Address currently bound to the name. The Mint MUST reject the exchange if that Unified Address does not contain an Ironwood receiver. Successful authorization establishes access to that receiver only, not to any other receiver contained in the Unified Address.
+\textbf{Relay.} The Mint sends the Relay to the Ironwood receiver contained in the Unified Address currently bound to the name. The Mint MUST reject the exchange if that Unified Address does not contain an Ironwood receiver. Successful authorization establishes access to that receiver only, not to any other receiver contained in the Unified Address.
 
-The controller returns the OTP by sending an OTP-bearing request to the same treasury account:
+\textbf{Respond.} The controller sends the OTP back to the same treasury account:
 
 \begin{center}
 \texttt{ZNS:update:<name>:<ua>:<otp>}\\
 \texttt{ZNS:release:<name>:<ua>:<otp>}
 \end{center}
 
-The name payment is on that OTP-bearing note. The note MUST satisfy the price and payment requirements of the active pricing policy. The first request funds only OTP delivery; it is not the name price.
+The name payment is on the Respond. That note MUST satisfy the price and payment requirements of the active pricing policy. The Request funds only the Relay; it is not the name price.
 
 The OTP is bound to the requested transition, expires after a fixed time interval measured using canonical-chain MTP, and is consumed on successful use. Receipt of the correct OTP within that window demonstrates both the ability to decrypt shielded messages sent to the selected receiver and temporal liveness.
 
@@ -30,19 +30,19 @@ For an update, authorization does not verify control of the proposed new Unified
 
 An update MAY specify the currently bound Unified Address as the target address when performed for renewal, liveness confirmation, or both.
 
-\subsection{OTP relay memo}
+\subsection{Relay memo}
 
-The Mint delivers the OTP in an Ironwood shielded memo. The non-padding bytes are:
+The Relay is an Ironwood shielded memo from the Mint to the controller. The non-padding bytes are:
 
 \begin{verbatim}
 ZNS:otp:<otp>:<name>:<verb>:<ua>
 \end{verbatim}
 
-The six-digit code is the first field after the message type so a wallet displays it without the controller scanning later fields. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes. The \texttt{<name>} field is the name being updated or released. The \texttt{<verb>} field is \texttt{update} or \texttt{release}. The \texttt{<ua>} field is the target Unified Address from the request.
+The six-digit code is the first field after the message type so a wallet displays it without the controller scanning later fields. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes. The \texttt{<name>} field is the name being updated or released. The \texttt{<verb>} field is \texttt{update} or \texttt{release}. The \texttt{<ua>} field is the target Unified Address from the Request.
 
-The memo is exactly 512 bytes and zero-padded. The \texttt{otp} message type distinguishes it from a name request as specified in Section~\ref{sec:requests}, and a request parser MUST reject it as such.
+The memo is exactly 512 bytes and zero-padded. The \texttt{otp} message type distinguishes it from a Request or Respond as specified in Section~\ref{sec:requests}, and a parser for those memos MUST reject it as such.
 
-OTP relay memos are sent from the Mint treasury account. That account's viewing key is not the published Name Note viewing key.
+Relay memos are sent from the Mint treasury account. That account's viewing key is not the published Name Note viewing key.
 
 \subsection{OTP validity}
 
@@ -64,7 +64,7 @@ $$\text{otp\_expires\_at} = \tau + D_{\text{OTP}}.$$
 
 The Mint MUST reject the OTP when canonical-chain MTP is greater than or equal to \texttt{otp\_expires\_at}.
 
-The Mint MUST also reject an OTP presented for a different bound transition, an OTP that exceeds the permitted number of attempts, or an OTP that has already been successfully used. A successfully used OTP is consumed and MUST NOT be accepted again for the same request. An incorrect OTP does not consume the challenge.
+The Mint MUST also reject an OTP presented for a different bound transition, an OTP that exceeds the permitted number of attempts, or an OTP that has already been successfully used. A successfully used OTP is consumed and MUST NOT be accepted again for the same Request. An incorrect OTP does not consume the challenge.
 
 If the accepted Name Note for the name changes, including under a chain reorganization, the Mint MUST discard the pending OTP.
 
@@ -72,6 +72,6 @@ OTP expiration is independent of registration expiration and the liveness deadli
 
 \subsection{Public verification boundary}
 
-The OTP exchange is not part of the public Name Note history. The Resolver derives registry state from Name Notes. It can check the resulting note, including the \field{expires\_at} committed by an \action{update}, and Mint authorization and attestation. It cannot recover the OTP, or prove from those notes that an OTP was issued for that transition.
+Request, Relay, and Respond are not part of the public Name Note history. The Resolver derives registry state from Name Notes. It can check the resulting note, including the \field{expires\_at} committed by an \action{update}, and Mint authorization and attestation. It cannot recover the OTP, or prove from those notes that an OTP was issued for that transition.
 
 Under the TEE assumptions, attestation is what establishes that the Mint ran the approved authorization procedure.
