@@ -115,15 +115,15 @@
 \node[actor, fill=gray!8, right=3.2cm of wallet] (mint) {Mint (TEE)};
 \node[chainbox, fill=gray!15, below=1.8cm of wallet, xshift=1.6cm] (chain) {Zcash chain};
 
-\draw[arrow] (wallet) -- node[label, above] {request memo} (mint);
-\draw[arrow] (mint) -- node[label, sloped, above] {OTP relay memo} (chain);
-\draw[arrow] (chain) -- node[label, sloped, above] {OTP relay memo} (wallet);
-\draw[arrow] (wallet) -- node[label, sloped, below] {request + OTP} (chain);
-\draw[arrow] (chain) -- node[label, sloped, below] {request + OTP} (mint);
+\draw[arrow] (wallet) -- node[label, above] {Request} (mint);
+\draw[arrow] (mint) -- node[label, sloped, above] {Relay} (chain);
+\draw[arrow] (chain) -- node[label, sloped, above] {Relay} (wallet);
+\draw[arrow] (wallet) -- node[label, sloped, below] {Respond} (chain);
+\draw[arrow] (chain) -- node[label, sloped, below] {Respond} (mint);
 \draw[arrow, dashed] (mint) -- node[label, right] {Name Note self-send} (chain);
 
 \node[font=\scriptsize, text=gray, below=0.15cm of wallet] {controller UA};
-\node[font=\scriptsize, text=gray, below=0.15cm of mint] {OTP account};
+\node[font=\scriptsize, text=gray, below=0.15cm of mint] {treasury account};
 
 \end{tikzpicture}%
 }

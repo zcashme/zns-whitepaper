@@ -8,7 +8,7 @@ To guarantee the globally unique mapping of human-readable names to Zcash addres
 The protocol relies on three distinct components:
 
 \begin{itemize}
-  \item \textbf{The Mint.} The authoritative off-chain program that evaluates the naming policy. It runs inside a Trusted Execution Environment (TEE), with its authority bound to approved protocol code through remote attestation. It uses its own Zcash node to read chain state independently.
+  \item \textbf{The Mint.} The authoritative off-chain program that evaluates the naming policy. It runs inside a Trusted Execution Environment (TEE). The Mint spending key is generated in the enclave, and the Mint code and pricing policy execute there. Remote attestation binds that key and those programs to an approved enclave measurement. It uses its own Zcash node to read chain state independently.
   \item \textbf{The Name Note.} An Ironwood output used to record a name transition on-chain.
   \item \textbf{The Resolver.} A permissionless client that reads the canonical sequence of Zcash transactions, verifies Name Notes and deterministically derives registry state.
 \end{itemize}
@@ -20,8 +20,8 @@ The security of the derived state relies on six distinct properties. The Resolve
 \begin{itemize}
   \item \textbf{Zcash validity:} The transaction satisfies Zcash consensus.
   \item \textbf{Mint authorization:} The recognized Mint spending key authorized the transaction.
-  \item \textbf{TEE attestation:} The recognized Mint identity executed the approved enclave code.
-  \item \textbf{Name Note verification:} The transition tuple encoded in a Name Note matches its Ironwood note commitment.
+  \item \textbf{TEE attestation:} The Mint spending key was generated in the approved enclave, which executes the Mint code and pricing policy.
+  \item \textbf{Commitment verification:} The transition tuple encoded in a Name Note matches its Ironwood note commitment.
   \item \textbf{User authorization:} The attested Mint enforces the authorization procedure defined in Section~\ref{sec:authorization}.
   \item \textbf{State derivation:} Resolvers reading the canonical Zcash chain under identical protocol parameters derive the same registry state.
 \end{itemize}

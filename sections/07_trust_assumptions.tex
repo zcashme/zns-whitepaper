@@ -11,7 +11,7 @@
 
 \subsection{TEE security}
 
-\zns{} assumes that the selected TEE correctly executes the approved Mint code, protects the Mint spending key, and provides trustworthy remote attestation. This includes enforcement of claim eligibility, authorization, lifecycle, and pricing rules, correct calculation of \field{expires\_at}, and correct use of canonical-chain MTP for expiration, liveness, and OTP validity.
+\zns{} assumes that the selected TEE generates the Mint spending key, correctly executes the approved Mint code and pricing policy, and provides trustworthy remote attestation. This includes enforcement of claim eligibility, authorization, lifecycle, and pricing rules, correct calculation of \field{expires\_at}, and correct use of canonical-chain MTP for expiration, liveness, and OTP validity.
 
 A compromise of these properties could allow the Mint policy to be bypassed or unauthorized Name Notes to be created, but it would not allow previously confirmed Name Notes to be removed or rewritten outside Zcash consensus.
 
