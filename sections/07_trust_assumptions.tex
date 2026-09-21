@@ -27,7 +27,7 @@ If registration pricing depends on external market data, \zns{} assumes that the
 
 \subsection{Protected-name access}
 
-During the early-access window, \zns{} assumes that access codes are issued only to authorized claimants and remain unavailable to unauthorized parties, and that the Mint's read of the protected-name policy is accurate enough to classify names as open or protected. Disclosure of a valid code, or a false open classification, can allow a protected name to be claimed before general availability. After the fixed general-availability day, these assumptions no longer apply to claim acceptance.
+During the early-access window, access codes for protected names are derived inside the attested Mint environment from a Mint-held secret and the claim name. \zns{} assumes that this secret remains unavailable outside that environment, that codes distributed to authorized claimants are not disclosed to unauthorized parties, and that the Mint's read of the protected-name policy is accurate enough to classify names as open or protected. Compromise of the secret, disclosure of a valid code, or a false open classification can allow a protected name to be claimed before general availability. After the fixed general-availability day, these assumptions no longer apply to claim acceptance.
 
 \subsection{Mint availability}
 
