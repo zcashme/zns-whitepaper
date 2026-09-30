@@ -28,13 +28,11 @@ Approved enclave measurements, attestation requirements, and the approved source
 
 \subsection{Claim eligibility}
 
-Some names may be designated as protected for a limited early-access window to reduce impersonation, misleading claims of affiliation, and opportunistic registration of names associated with existing identities or projects.
+Some names may be designated as protected to reduce impersonation, misleading claims of affiliation, and opportunistic registration of names associated with existing identities or projects. Protection applies per name: the protected-name policy either fixes the time at which a name's protection lifts or keeps the name protected indefinitely.
 
-During that window the Mint consults the attested protected-name policy to classify each claim name as open or protected. An open name follows the ordinary claim path. A protected name is accepted only if the claim Request carries the matching access code in the leading slot specified in Section~\ref{sec:requests}. A missing or incorrect code is rejected; the payment is retained by the Mint as for any other rejected claim. If the policy data source is temporarily unavailable, the Mint MUST defer evaluation of that claim until the next tip rather than accept or reject it.
+The Mint consults the attested protected-name policy to classify each claim name as open or protected at the canonical-chain MTP of the claim. A name whose protection has lifted is open. An open name follows the ordinary claim path, and any access code it carries is ignored. A protected name is accepted only if the claim Request carries the matching access code in the leading slot specified in Section~\ref{sec:requests}. A missing or incorrect code is rejected; the payment is retained by the Mint as for any other rejected claim. The Mint evaluates claims against its most recently loaded copy of the policy and does not wait on the policy data source.
 
 Redemption is derived from registry state: once a protected name has an accepted live Name Note, further claims for that name fail under the ordinary namespace rules. The Mint does not mark codes spent in an external store.
-
-The current \zns{} deployment MUST fix a general-availability day on the Mint's day clock (canonical-chain MTP days since the Mint birthday). At and after that day, access codes are ignored and every name is eligible for the ordinary public claim path. Unredeemed codes become worthless.
 
 Access-code verification is Mint policy under attestation and is not independently reconstructed by the Resolver. Once a protected name is validly claimed, it is governed by the same transition and authorization rules as any other name.
 
@@ -80,7 +78,7 @@ $$\text{canonical\_chain\_mtp} \geq \text{expires\_at}.$$
 
 Reaching \field{expires\_at} does not directly modify derived registry state. When the expiration condition is reached, the Mint MUST create a \action{release} Name Note.
 
-The registration remains active in derived registry state until a \action{release} Name Note is accepted on the canonical Zcash chain, subject to the same-block precedence rule defined in Section~\ref{sec:resolver-state}.
+The registration remains active in derived registry state until a \action{release} Name Note is accepted on the canonical Zcash chain, or the registration otherwise ends under the rules in Section~\ref{sec:resolver-state}.
 
 A registration whose \field{expires\_at} value is \texttt{none} has no fixed expiration but remains subject to the liveness requirement.
 
@@ -108,11 +106,7 @@ An \action{update} with the term \texttt{forever} requests an upgrade of a fixed
 
 Once the expiration condition has been reached, the Mint MUST NOT accept a new renewal request and MUST create the required \action{release} Name Note.
 
-An update or renewal affects the registration only if its Name Note is accepted in a block preceding any \action{release} Name Note that ends the registration.
-
-If an \action{update} and \action{release} for the same current registration are accepted in the same block and both reference the same predecessor, the \action{release} takes precedence regardless of the update's purpose or resulting \field{expires\_at}.
-
-If the \action{release} is accepted in an earlier block, the registration has ended and a later \action{update} does not affect registry state.
+An \action{update} and a \action{release} for the same registration both consume the current Name Note, so at most one of them can be accepted. If the \action{release} is accepted first, the registration has ended and a later \action{update} does not affect registry state.
 
 An \action{update} MAY retain the currently bound Unified Address. Such an update may be used for renewal, liveness confirmation, or both.
 
@@ -138,7 +132,7 @@ If the required liveness interval passes without a successful liveness event, th
 
 For a fixed-term registration, the Mint MUST create a release when either the committed \field{expires\_at} is reached or the liveness requirement fails, whichever occurs first.
 
-An \action{update} affects the registration only if it is accepted in a block preceding the required \action{release}. If the update and release are accepted in the same block and reference the same current predecessor, the release takes precedence.
+An \action{update} affects the registration only if it consumes the current Name Note before the required \action{release} does.
 
 Liveness enforcement is performed by the attested Mint and is not part of the Resolver's required state-derivation procedure.
 
@@ -154,9 +148,9 @@ The Mint MUST create a \action{release} Name Note when any of the following occu
 
 The first condition is a controller-requested release and requires the OTP authorization procedure defined in Section~\ref{sec:authorization}. The second and third conditions are lifecycle releases created by the Mint and do not require user authorization.
 
-Reaching an expiration or liveness deadline does not itself modify registry state. Registry state changes only when the resulting \action{release} Name Note is accepted on the canonical Zcash chain.
+Reaching an expiration or liveness deadline does not itself modify registry state. Registry state changes only when the resulting \action{release} Name Note is accepted on the canonical Zcash chain, or when another transaction ends the registration under the rules in Section~\ref{sec:resolver-state}.
 
-An \action{update} affects the current registration only if it is accepted in a block preceding the \action{release}. If an \action{update} and \action{release} referencing the same current predecessor are accepted in the same block, the \action{release} takes precedence.
+An \action{update} affects the current registration only if it consumes the current Name Note before the \action{release} does.
 
 After a \action{release}, a subsequent \action{claim} begins a new registration and uses the zero predecessor defined in Section~\ref{sec:name-notes}.
 

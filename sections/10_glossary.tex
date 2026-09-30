@@ -16,7 +16,7 @@ Name Note & An Ironwood output whose memo records a name transition, including i
 Request & A user-to-Mint memo asking the Mint to evaluate a \action{claim}, \action{update}, or \action{release}; it never carries an OTP. A \action{claim} MAY carry an access code; see Section~\ref{sec:requests}. \\
 Relay & A Mint-to-user memo of the form \texttt{ZNS:otp:<otp>:<name>:<verb>:<ua>} that delivers the OTP; see Section~\ref{sec:authorization}. \\
 Respond & A user-to-Mint memo that returns the OTP, \texttt{ZNS:otp:<otp>:<name>:<verb>:<ua>}; the Relay and the Respond differ only in sender; see Section~\ref{sec:requests} and Section~\ref{sec:authorization}. \\
-Access code & An optional leading field of exactly six ASCII decimal digits (\texttt{0}--\texttt{9}, including leading zeroes) on a \action{claim} Request, used only during the early-access window for a protected name; see Section~\ref{sec:requests} and Section~\ref{sec:the-mint}. Distinct from the OTP. \\
+Access code & An optional leading field of exactly six ASCII decimal digits (\texttt{0}--\texttt{9}, including leading zeroes) on a \action{claim} Request, used only to claim a name while it is protected; see Section~\ref{sec:requests} and Section~\ref{sec:the-mint}. Distinct from the OTP. \\
 Transition & A \action{claim}, \action{update}, or \action{release} recorded in a Name Note and represented by the tuple $\sigma$; see Section~\ref{sec:name-notes}. \\
 Predecessor (\field{prev\_rcm}) & The \field{rcm} of the previously accepted Name Note for the same name, encoded as 64 lowercase hexadecimal characters. The initial claim uses 64 zeroes; see Section~\ref{sec:name-notes}. \\
 Binding & The association between a name and a Unified Address established by its accepted Name Note history. \\
