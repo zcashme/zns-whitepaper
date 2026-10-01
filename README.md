@@ -1,7 +1,7 @@
 # Zcash Name Service
 ### A Deterministic, Attested Name Registry on Zcash
 
-**Julian Abraham** — julian@zcash.me · **James Joseph** — james@zcash.me  
+**Julian Abraham** — julian@zcash.me · **James Joseph** — james@zcash.me · **Lana Ivina** — lana@circuitlabs.io  
 [github.com/zcashme](https://github.com/zcashme)
 
 | | |
@@ -96,10 +96,14 @@
 
 ---
 
-## Build
+<a href="main.pdf"><img src="pages/page-22.png" width="100%"></a>
 
-```sh
-tectonic main.tex
-```
+---
 
-Produces `main.pdf`.
+<a href="main.pdf"><img src="pages/page-23.png" width="100%"></a>
+
+---
+
+<a href="main.pdf"><img src="pages/page-24.png" width="100%"></a>
+
+---
