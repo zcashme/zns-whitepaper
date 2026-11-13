@@ -139,7 +139,3 @@
 <a href="main.pdf"><img src="pages/page-32.png" width="100%"></a>
 
 ---
-
-<a href="main.pdf"><img src="pages/page-33.png" width="100%"></a>
-
----
