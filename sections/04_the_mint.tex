@@ -18,7 +18,6 @@ The Resolver recognizes Mint authorization only if the attestation establishes a
   \item The enclave generated the Mint spending key and is the only party that can use it.
   \item The enclave runs the applicable \zns{} protocol version.
   \item The enclave targets the applicable Zcash network.
-  \item The enclave implements the required protected persistent-state mechanism for replay prevention.
   \item The enclave obtains canonical-chain Median Time Past from the approved Zcash node interface and uses it as the authoritative time source for protocol-defined time checks.
 \end{enumerate}
 
@@ -30,9 +29,9 @@ Approved enclave measurements, attestation requirements, and the approved source
 
 Some names may be designated as protected to reduce impersonation, misleading claims of affiliation, and opportunistic registration of names associated with existing identities or projects. Protection applies per name: the protected-name policy either fixes the time at which a name's protection lifts or keeps the name protected indefinitely.
 
-The Mint consults the attested protected-name policy to classify each claim name as open or protected at the canonical-chain MTP of the claim. A name whose protection has lifted is open. An open name follows the ordinary claim path, and any access code it carries is ignored. A protected name is accepted only if the claim Request carries the matching access code in the leading slot specified in Section~\ref{sec:requests}. A missing or incorrect code is rejected; the payment is retained by the Mint as for any other rejected claim. The Mint evaluates claims against its most recently loaded copy of the policy and does not wait on the policy data source.
+The Mint consults the protected-name policy to classify each claim name as open or protected at the canonical-chain MTP of the claim. A name whose protection has lifted is open. An open name follows the ordinary claim path, and any access code it carries is ignored. A protected name is accepted only if the claim Request carries the matching access code in the leading slot specified in Section~\ref{sec:requests}. A claim with a missing or incorrect code is rejected.
 
-Redemption is derived from registry state: once a protected name has an accepted live Name Note, further claims for that name fail under the ordinary namespace rules. The Mint does not mark codes spent in an external store.
+Redemption is derived from registry state: once a protected name has an accepted live Name Note, further claims for that name fail under the ordinary namespace rules.
 
 Access-code verification is Mint policy under attestation and is not independently reconstructed by the Resolver. Once a protected name is validly claimed, it is governed by the same transition and authorization rules as any other name.
 
@@ -57,7 +56,7 @@ If all applicable requirements are satisfied, the Mint accepts the request and c
 \subsection{Name lifecycle}
 \label{sec:the-mint-lifecycle}
 
-\zns{} uses canonical-chain Median Time Past (MTP) rather than block counts or local system time for protocol-defined lifecycle periods. MTP is derived from Zcash block timestamps and has one-second granularity. It is chain-derived time rather than exact wall-clock time.
+\zns{} uses canonical-chain Median Time Past (MTP) rather than block counts or local system time for protocol-defined lifecycle periods. The MTP of a block is its median-time-past as the Zcash Protocol Specification defines it: the median of the timestamps of the eleven blocks that precede it \cite{zcash-protocol}. It has one-second granularity and is chain-derived time rather than exact wall-clock time.
 
 \subsubsection{Initial claims}
 
@@ -125,7 +124,7 @@ The initial liveness interval begins when the \action{claim} Name Note is accept
 
 The liveness time of a \action{claim}, \action{update}, \action{sale}, \action{list}, \action{auction}, or \action{delist} is derived from the canonical-chain MTP associated with the block containing that accepted Name Note.
 
-The Mint records the most recent successful liveness event in protected persistent state and derives the next liveness deadline using canonical-chain MTP. If a chain reorganization removes or changes a Name Note used to establish the current liveness time, the Mint MUST reconcile its protected lifecycle state with the replacement canonical chain before enforcing the resulting liveness deadline.
+The Mint derives the liveness deadline from the accepted Name Notes on the canonical chain. If a chain reorganization removes or changes a Name Note used to establish the current liveness time, the Mint MUST derive the liveness time from the replacement canonical chain before enforcing the resulting liveness deadline.
 
 A Request or Relay does not satisfy liveness. A failed, expired, or incomplete Respond does not satisfy liveness. A liveness interval resets only when the resulting Name Note is accepted on the canonical Zcash chain.
 
@@ -147,7 +146,7 @@ The Mint MUST create a \action{release} Name Note when any of the following occu
   \item the current liveness deadline is reached without an accepted Name Note having reset the liveness interval.
 \end{enumerate}
 
-The first condition is a controller-requested release and requires the OTP authorization procedure defined in Section~\ref{sec:authorization}. The second and third conditions are lifecycle releases created by the Mint and do not require user authorization. If either is reached while a buy is open for the name, the Mint creates the \action{release} after the buy closes, as specified in Section~\ref{sec:marketplace}.
+The first condition is a controller-requested release and requires the OTP authorization procedure defined in Section~\ref{sec:authorization}. The second and third conditions are lifecycle releases created by the Mint and do not require user authorization.
 
 Reaching an expiration or liveness deadline does not itself modify registry state. Registry state changes only when the resulting \action{release} Name Note is accepted on the canonical Zcash chain, or when another transaction ends the registration under the rules in Section~\ref{sec:resolver-state}.
 
@@ -163,6 +162,6 @@ For a \action{claim} or \action{update}, the resulting \field{expires\_at} is pa
 
 For a \action{release}, the Name Note records the Unified Address of the binding being released.
 
-For a \action{list} or an \action{auction}, the listing terms are part of the transition and MUST be present in the Name Note. A \action{sale}, \action{list}, \action{auction}, or \action{delist} records the Unified Address and the \field{expires\_at} that hold after it, as a \action{claim} or \action{update} does. The buy Request, the quote, and the buyer's payment are not repeated in the Name Note.
+For a \action{list} or an \action{auction}, the listing terms are part of the transition and MUST be present in the Name Note.
 
 The protocol's validity limits on names, Unified Addresses, and other encoded fields MUST ensure that every valid \zns{} transition fits within a single 512-byte Name Note memo.

@@ -20,8 +20,6 @@ Access code & An optional leading field of exactly six ASCII decimal digits (\te
 Transition & A \action{claim}, \action{update}, \action{release}, \action{sale}, \action{list}, \action{auction}, or \action{delist} recorded in a Name Note and represented by the tuple $\sigma$; see Section~\ref{sec:name-notes}. \\
 Listing & The offer of a name for sale. A name is listed while its current accepted Name Note is a \action{list} or an \action{auction}; see Section~\ref{sec:marketplace}. \\
 Listing terms & The payment address and the price of a \action{list}, or the payment address, start and minimum prices, and start and end blocks of an \action{auction}; see Section~\ref{sec:listing-terms}. \\
-Buy & A buyer's \action{buy} Request, the Mint's quote, and the buyer's transparent payment of the price plus the OTP to the listing's payment address; see Section~\ref{sec:marketplace}. \\
-Quote & The Mint-to-buyer memo \texttt{ZNS:buyotp:...} or \texttt{ZNS:dutch:...} that delivers the OTP of a buy and, for an auction, the price and its deadline; see Section~\ref{sec:marketplace}. \\
 Sale & The transition that binds a listed name to its buyer. The Mint creates it after it counts the buyer's payment; see Section~\ref{sec:marketplace}. \\
 Predecessor (\field{prev}) & The \field{cmx} of the previously accepted Name Note for the same name, encoded as 64 lowercase hexadecimal characters. A \action{claim} uses 64 zeroes; see Section~\ref{sec:name-notes}. \\
 Binding & The association between a name and a Unified Address established by its accepted Name Note history. \\
@@ -35,7 +33,7 @@ User authorization & Request, Relay, and Respond, used to authorize an \action{u
 One-time passcode (OTP) & A six-digit decimal passcode delivered in the Relay and returned in the Respond, or delivered in a quote and added to the price a buyer pays; see Section~\ref{sec:authorization} and Section~\ref{sec:marketplace}. \\
 Expiration (\field{expires\_at}) & The absolute Unix timestamp in whole seconds committed by a Name Note, or the exact value \texttt{none} for a registration without fixed expiration. A \action{claim} or an \action{update} sets it; a \action{sale}, \action{list}, \action{auction}, or \action{delist} repeats it. \\
 Registration term & A duration requested for an initial fixed-term registration or renewal, or the exact value \texttt{forever} requested to upgrade a fixed-term registration. The user supplies a term; the Mint computes the resulting absolute \field{expires\_at}, or \texttt{none} for an upgrade; see Section~\ref{sec:the-mint-lifecycle}. \\
-Median Time Past (MTP) & The chain-derived time value obtained from the canonical Zcash chain and used by the Mint for protocol-defined time checks. \\
+Median Time Past (MTP) & A block's median-time-past as the Zcash Protocol Specification defines it, used by the Mint for protocol-defined time checks; see Section~\ref{sec:the-mint-lifecycle}. \\
 Liveness time & The canonical-chain MTP associated with the block containing the most recent accepted Name Note of a registration. \\
 Liveness deadline & The current liveness time plus the protocol-defined liveness interval. Reaching the deadline requires the Mint to create a \action{release} Name Note. \\
 ZNSIP & A \zns{} Improvement Proposal specifying a proposed protocol change; see Section~\ref{sec:znsips}. \\

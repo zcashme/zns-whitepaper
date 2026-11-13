@@ -24,8 +24,6 @@ The remaining bytes encode one transition in one of the following formats:
 \end{flushleft}
 }
 
-The \action{auction} format is one memo with no line break or added spaces; it is wrapped here to fit the page.
-
 The \texttt{<expires\_at>} field is either the canonical ASCII decimal encoding of a Unix timestamp in whole seconds or the exact ASCII bytes \texttt{none}. The value \texttt{none} indicates that the registration has no fixed expiration. A \texttt{release} MUST encode \texttt{none} as its \texttt{expires\_at} value and the Unified Address of the binding being released as its \texttt{ua} value.
 
 The \texttt{<ua>} field of a \action{sale} is the buyer's Unified Address. The \texttt{<ua>} field of a \action{list}, \action{auction}, or \action{delist} is the Unified Address bound to the name, which those transitions leave unchanged.

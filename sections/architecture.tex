@@ -15,7 +15,7 @@ The protocol relies on three distinct components:
 
 \subsection{Independence of Facts}
 
-The security of the derived state relies on six distinct properties. The Resolver verifies publicly reconstructible properties directly and relies on Mint attestation for policy checks that are not publicly reconstructible.
+The security of the derived state relies on six distinct properties. The Resolver verifies Mint authorization, commitments, and state derivation directly. It takes Zcash validity from the chain it reads and relies on Mint attestation for policy checks that are not publicly reconstructible.
 
 \begin{itemize}
   \item \textbf{Zcash validity:} The transaction satisfies Zcash consensus.
