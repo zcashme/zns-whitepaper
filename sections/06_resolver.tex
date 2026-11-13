@@ -12,7 +12,7 @@ A Resolver must:
 \begin{enumerate}
   \item scan the canonical Zcash chain using the Mint's published full viewing key to identify and decrypt Ironwood outputs, obtaining their memos and note components;
   \item parse the decrypted outputs to identify Name Notes;
-  \item verify each Name Note's commitment using the ZNS-specific derivation of $\mathsf{rcm}$ and $\psi$ defined in Section~\ref{sec:name-notes};
+  \item verify each Name Note's commitment using the derivation of its \texttt{rseed}, $\psi$, and $\mathsf{rcm}$ defined in Section~\ref{sec:name-notes};
   \item verify Mint authorization and attestation as specified in Section~\ref{sec:the-mint};
   \item apply accepted transitions in canonical order to derive registry state; and
   \item provide clients with the current and historical binding state of each name, including the \field{expires\_at} value committed by the applicable Name Note.
@@ -35,7 +35,7 @@ User authorization is not independently reconstructed by the Resolver. As descri
 
 The Resolver processes transactions in canonical order: ascending block height, then transaction order within the block. A transaction carrying more than one Name Note produces no accepted transition.
 
-For each name, the \field{prev\_rcm} field links a transition to the preceding Name Note within the current registration. A \action{claim}, including one following a \action{release}, uses the zero predecessor defined in Section~\ref{sec:name-notes}. An \action{update} or \action{release} is accepted only if its transaction spends the current accepted Name Note of that name and no other name's, and its \field{prev\_rcm} matches the \field{rcm} of that Name Note.
+For each name, the \field{prev} field links a transition to the preceding Name Note within the current registration. A \action{claim}, including one following a \action{release}, uses the zero predecessor defined in Section~\ref{sec:name-notes}. An \action{update} or \action{release} is accepted only if its transaction spends the current accepted Name Note of that name and no other name's, and its \field{prev} matches the \field{cmx} of that Name Note.
 
 A \action{claim} has no predecessor Name Note to spend and instead spends an anchor: a zero-value note held by the Name Note account. The set of live anchors, the anchor pool, is established once during Mint setup with a fixed number of anchors. After the pool is established, other zero-value outputs to the Name Note account do not become anchors. A \action{claim} is accepted only if its transaction spends exactly one live anchor, spends no live Name Note, and creates exactly one zero-value output to the Name Note account, and the name has no live registration.
 
