@@ -17,9 +17,19 @@ A compromise of these properties could allow the Mint policy to be bypassed or u
 
 \subsection{User viewing access}
 
-\zns{} assumes that the current controller retains viewing access to the Ironwood receiver of the bound Unified Address. This access is required to complete \action{update} and \action{release} authorization and to satisfy the liveness requirement. \zns{} does not require or verify spending authority over that receiver.
+\zns{} assumes that the current controller retains viewing access to the Ironwood receiver of the bound Unified Address. This access is required to complete \action{update}, \action{release}, \action{list}, \action{auction}, and \action{delist} authorization and to satisfy the liveness requirement. \zns{} does not require or verify spending authority over that receiver.
 
 Loss of viewing access prevents the controller from authorizing subsequent changes or satisfying the liveness requirement.
+
+A buyer needs viewing access to the Ironwood receiver of the Unified Address in its \action{buy} Request to receive the quote.
+
+\subsection{Marketplace payments}
+
+A buyer pays a seller directly on Zcash's transparent pool. The Mint never holds the payment, so a Mint failure cannot lose or redirect it, and the Mint cannot return it. \zns{} assumes that the Mint observes the canonical chain correctly and creates the \action{sale} Name Note for each payment it counts. A payment the Mint does not count, as described in Section~\ref{sec:marketplace}, stays with the seller.
+
+The Resolver cannot verify from the Name Note history that a \action{sale} followed a payment. Under the TEE assumptions, attestation is what establishes that the Mint created a \action{sale} only for a counted payment.
+
+A seller chooses the payment address. \zns{} does not verify that the seller controls it.
 
 \subsection{Price data}
 

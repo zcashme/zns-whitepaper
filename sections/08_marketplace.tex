@@ -1,0 +1,102 @@
+\section{The Marketplace}
+\label{sec:marketplace}
+
+A controller may offer a name for sale, and a buyer may buy it. The offer and the sale are Name Notes, so the marketplace is part of the public registry history. The payment goes from the buyer to the seller on Zcash's transparent pool. It never passes through the Mint.
+
+\subsection{Listing}
+
+A \action{list} or \action{auction} Request names the name, the Unified Address currently bound to it, and the listing terms of Section~\ref{sec:listing-terms}. It is authorized by Request, Relay, and Respond as specified in Section~\ref{sec:authorization}. The Relay and the Respond carry the listing terms, so the controller authorizes the exact terms the Name Note will record.
+
+The Mint MUST refuse a \action{list} or \action{auction} when any of the following holds:
+
+\begin{itemize}
+  \item the Unified Address in the Request is not the one currently bound to the name;
+  \item a release condition of Section~\ref{sec:the-mint-lifecycle} has been reached for the registration;
+  \item a Name Note for the name is awaiting confirmation;
+  \item a buy is open for the name;
+  \item for an \action{auction}, the terms are not valid, or the block being evaluated is after \texttt{<end\_block>}.
+\end{itemize}
+
+When the authorization completes, the Mint creates the \action{list} or \action{auction} Name Note by spending the current Name Note of the name. The Name Note MUST record the Unified Address and the \field{expires\_at} of the Name Note it spends: a listing changes neither the binding nor the registration period.
+
+A name is listed while its current accepted Name Note is a \action{list} or an \action{auction}, on the terms that note records. A listed name remains bound and resolves as before. Any later accepted Name Note for the name ends the listing: an \action{update}, a \action{delist}, a \action{sale}, a \action{release}, or another \action{list} or \action{auction}, which replaces the terms.
+
+\subsection{Delisting}
+
+A \action{delist} Request names the name and the Unified Address currently bound to it, and is authorized in the same way. The Mint MUST refuse it when the name is not listed, when the Unified Address is not the one currently bound, when a release condition has been reached, when a Name Note for the name is awaiting confirmation, or when a buy is open for the name.
+
+The \action{delist} Name Note spends the listing and MUST record the same Unified Address and \field{expires\_at}.
+
+\subsection{Auction price}
+
+Let an \action{auction} have prices $P_{\text{start}} > P_{\text{min}}$ in zatoshis and blocks $h_{\text{start}} < h_{\text{end}}$. Its price at block height $h$, for $h_{\text{start}} \le h \le h_{\text{end}}$, is
+
+$$P(h) = P_{\text{start}} - \left\lfloor \frac{(P_{\text{start}} - P_{\text{min}}) \cdot (h - h_{\text{start}})}{h_{\text{end}} - h_{\text{start}}} \right\rfloor .$$
+
+The price is $P_{\text{start}}$ at the start block and $P_{\text{min}}$ at the end block, and falls in whole zatoshis between them. The auction has no price before $h_{\text{start}}$ or after $h_{\text{end}}$. The end block is the last block in which a buy can open. After it, the name stays listed and bound until another Name Note is accepted, but it cannot be bought.
+
+\subsection{Buying}
+
+A buyer buys a listed name in three steps: a \action{buy} Request, a quote from the Mint, and a payment to the seller.
+
+\textbf{Request.} The buyer submits the \action{buy} Request of Section~\ref{sec:requests} to the Mint's treasury account, carrying the request fee of Section~\ref{sec:authorization}. Its Unified Address is the one the sale will bind, and it MUST contain an Ironwood receiver. The Mint evaluates the Request at the block that contains it. The Mint MUST NOT open a buy, and retains the fee, when:
+
+\begin{itemize}
+  \item the name is not listed, or it is an \action{auction} whose end block has passed;
+  \item a release condition has been reached for the registration;
+  \item a Name Note for the name is awaiting confirmation;
+  \item a buy is already open for a name listed at one price; or
+  \item another open buy already expects the same total at the same payment address.
+\end{itemize}
+
+The Mint returns the Request's value, less the network fee of the return, with one of the following memos when the buyer can try again:
+
+\begin{center}
+\texttt{ZNS:wait:<name>:<start\_block>}\\
+\texttt{ZNS:held:<name>:<until>}
+\end{center}
+
+\texttt{wait} answers a Request mined before an auction's start block. \texttt{held} answers a Request for an auctioned name that already has an open buy; \texttt{<until>} is that buy's deadline as a Unix timestamp.
+
+At most one buy is open for a name. When a buy opens, the Mint discards any OTP pending for that name.
+
+\textbf{Quote.} The Mint sends the buyer a shielded memo from the treasury account, to the Ironwood receiver of the buyer's Unified Address:
+
+\begin{center}
+\texttt{ZNS:buyotp:<otp>:<name>:<ua>}\\
+\texttt{ZNS:dutch:<otp>:<name>:<ua>:<price>:<until>}
+\end{center}
+
+The first form answers a buy of a name listed at one price. The second answers a buy of an auctioned name: \texttt{<price>} is the auction price $P(h)$ at the block $h$ that contains the Request, in the canonical spelling of Section~\ref{sec:listing-terms}, and \texttt{<until>} is the quote's deadline as a Unix timestamp. The price of a quote does not change while the quote is open.
+
+The \texttt{<otp>} field is six ASCII decimal digits generated as specified in Section~\ref{sec:authorization}. The message types \texttt{buyotp} and \texttt{dutch} differ from \texttt{otp}, so a quote is never read as a Relay.
+
+The current \zns{} deployment MUST fix the validity of an auction quote, $D_{\text{quote}}$, in seconds. A quote issued when canonical-chain MTP is $\tau$ expires at $\tau + D_{\text{OTP}}$ for a name listed at one price and at $\tau + D_{\text{quote}}$ for an auctioned name.
+
+\textbf{Payment.} The buyer pays the listing's \texttt{<pay\_to>} address with one transparent output whose value in zatoshis is exactly
+
+$$\text{price} + \text{otp},$$
+
+where the six digits of the OTP are read as a decimal integer of zatoshis. The amount identifies the buy: the payment carries no memo and the buyer sends nothing further to the Mint. The Mint counts the payment only if:
+
+\begin{itemize}
+  \item the output pays that address exactly that value;
+  \item the canonical-chain MTP of the block containing it is less than the quote's deadline; and
+  \item the listing the buy was opened against is still the current accepted Name Note of the name.
+\end{itemize}
+
+An unpaid buy closes when its quote expires.
+
+\subsection{Sale}
+
+After a block has been mined on top of the block that contains a counted payment, the Mint creates the \action{sale} Name Note. It MUST NOT create it earlier. The \action{sale} spends the listing, records the buyer's Unified Address, and MUST record the \field{expires\_at} of the listing it spends. The name stays live and is bound to the buyer. A \action{sale} can spend only a \action{list} or an \action{auction}.
+
+The buyer becomes the controller. The seller's listing ends with the \action{sale}.
+
+While a buy is open, from the quote until the buy closes unpaid or the \action{sale} is accepted, the Mint MUST NOT accept an \action{update}, \action{release}, \action{list}, \action{auction}, or \action{delist} for the name. A Respond for the name that arrives in that time is refused and its payment returned. If an expiration or liveness deadline is reached while a buy is open, the Mint creates the lifecycle \action{release} after the buy closes.
+
+If a chain reorganization changes the canonical history, the Mint MUST discard every open buy. A buyer whose buy is discarded submits a new Request.
+
+\subsection{Payments the Mint does not count}
+
+The payment is an ordinary transparent transfer from the buyer to the seller. The Mint does not receive it, hold it, or control it, and it cannot return it. A payment that the Mint does not count leaves the name with the seller. This includes a payment of another amount, a payment in a block at or after the quote's deadline, a payment made after the listing ended, and a payment for a buy the Mint discarded after a reorganization. Recovering such a payment is between the buyer and the seller.

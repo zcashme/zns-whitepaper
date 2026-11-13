@@ -1,7 +1,7 @@
 \section{Name Notes}
 \label{sec:name-notes}
 
-A Name Note is an Ironwood output whose memo records a name transition by encoding the type of name change, the name, the associated Unified Address when applicable, the expiration value, and a predecessor reference. Its \texttt{rseed} is derived from that transition, so the note commitment binds the transition the memo records.
+A Name Note is an Ironwood output whose memo records a name transition by encoding the type of name change, the name, the associated Unified Address when applicable, the expiration value, the listing terms when the name is offered for sale, and a predecessor reference. Its \texttt{rseed} is derived from that transition, so the note commitment binds the transition the memo records.
 
 \subsection{Memo encoding}
 
@@ -11,38 +11,69 @@ The name field MUST contain between 1 and 63 bytes, each of which is ASCII \text
 
 The remaining bytes encode one transition in one of the following formats:
 
-\begin{center}
+{\small
+\begin{flushleft}
 \texttt{ZNS:claim:<name>:<ua>:<expires\_at>:<prev>}\\
 \texttt{ZNS:update:<name>:<ua>:<expires\_at>:<prev>}\\
-\texttt{ZNS:release:<name>:<ua>:none:<prev>}
-\end{center}
+\texttt{ZNS:release:<name>:<ua>:none:<prev>}\\
+\texttt{ZNS:sale:<name>:<ua>:<expires\_at>:<prev>}\\
+\texttt{ZNS:list:<name>:<ua>:<expires\_at>:<pay\_to>:<price>:<prev>}\\
+\texttt{ZNS:auction:<name>:<ua>:<expires\_at>:<pay\_to>:<start\_price>:}\\
+\texttt{\ \ \ \ <min\_price>:<start\_block>:<end\_block>:<prev>}\\
+\texttt{ZNS:delist:<name>:<ua>:<expires\_at>:<prev>}
+\end{flushleft}
+}
+
+The \action{auction} format is one memo with no line break or added spaces; it is wrapped here to fit the page.
 
 The \texttt{<expires\_at>} field is either the canonical ASCII decimal encoding of a Unix timestamp in whole seconds or the exact ASCII bytes \texttt{none}. The value \texttt{none} indicates that the registration has no fixed expiration. A \texttt{release} MUST encode \texttt{none} as its \texttt{expires\_at} value and the Unified Address of the binding being released as its \texttt{ua} value.
 
-The \texttt{prev} field is the 64-character lowercase hexadecimal encoding of the predecessor Name Note's \field{cmx}: the 32-byte canonical little-endian encoding of its extracted note commitment, as recorded in the on-chain action that created it. A \texttt{claim} has no predecessor and uses 64 zeroes.
+The \texttt{<ua>} field of a \action{sale} is the buyer's Unified Address. The \texttt{<ua>} field of a \action{list}, \action{auction}, or \action{delist} is the Unified Address bound to the name, which those transitions leave unchanged.
+
+The \texttt{prev} field is the 64-character lowercase hexadecimal encoding of the predecessor Name Note's \field{cmx}: the 32-byte canonical little-endian encoding of its extracted note commitment, as recorded in the on-chain action that created it. A \texttt{claim} has no predecessor and uses 64 zeroes. Every other transition has a predecessor, and its \texttt{prev} MUST NOT be 64 zeroes.
 
 A Name Note parser MUST reject a memo that does not match one of these encodings.
+
+\subsection{Listing terms}
+\label{sec:listing-terms}
+
+A \action{list} offers a name at one price. An \action{auction} offers it at a price that falls from \texttt{<start\_price>} to \texttt{<min\_price>} between two blocks, as specified in Section~\ref{sec:marketplace}. Both name the address the buyer pays.
+
+\begin{itemize}
+  \item \texttt{<pay\_to>}: the standard text encoding of a transparent pay-to-public-key-hash address on the network the registry runs on. A script-hash address or any other address type is rejected.
+  \item \texttt{<price>}, \texttt{<start\_price>}, \texttt{<min\_price>}: an amount of ZEC in ASCII decimal. The whole part is one or more digits with no leading zero unless it is the single digit \texttt{0}. A fractional part, when present, is a period followed by one to eight digits whose last digit is not \texttt{0}. The amount MUST NOT exceed the Zcash money supply. \texttt{5}, \texttt{1.5}, and \texttt{0.00000001} are valid; \texttt{5.0}, \texttt{5.}, \texttt{05}, and \texttt{.5} are not.
+  \item \texttt{<start\_block>}, \texttt{<end\_block>}: a block height as a canonical ASCII decimal integer with no leading zeroes, at most $2^{32}-1$.
+\end{itemize}
+
+An \action{auction} MUST have \texttt{<end\_block>} greater than \texttt{<start\_block>} and \texttt{<start\_price>} greater than \texttt{<min\_price>}.
+
+Each amount has one spelling, because the raw bytes of the terms are bound into the note commitment.
 
 \subsection{Transition representation}
 
 To derive the note's \texttt{rseed}, interpret the encoded transition as the tuple
 
-$$\sigma = (\alpha, n, u, e, p)$$
+$$\sigma = (\alpha, n, u, e, t, p)$$
 
 where:
 \begin{itemize}
-  \item $\alpha$: The exact ASCII bytes \texttt{claim}, \texttt{update}, or \texttt{release}.
+  \item $\alpha$: The exact ASCII bytes \texttt{claim}, \texttt{update}, \texttt{release}, \texttt{sale}, \texttt{list}, \texttt{auction}, or \texttt{delist}.
   \item $n$: The raw bytes of the name field.
   \item $u$: The raw bytes of the \texttt{ua} field.
   \item $e$: The raw bytes of the \texttt{expires\_at} field.
+  \item $t$: For a \action{list} or an \action{auction}, the raw bytes of the listing terms as the memo writes them, colons included: \texttt{<pay\_to>:<price>}, or \texttt{<pay\_to>:<start\_price>:<min\_price>:<start\_block>:<end\_block>}. Absent for every other transition.
   \item $p$: The 32 raw bytes decoded from \texttt{prev}.
 \end{itemize}
 
 Define the fields $f$ of the transition as
 
-$$f = \alpha \parallel \mathtt{0x3a} \parallel n \parallel \mathtt{0x3a} \parallel u \parallel \mathtt{0x3a} \parallel e.$$
+$$f = \alpha \parallel \mathtt{0x3a} \parallel n \parallel \mathtt{0x3a} \parallel u \parallel \mathtt{0x3a} \parallel e$$
 
-These are the memo bytes that follow the leading \texttt{ZNS:} and precede the colon before \texttt{prev}.
+for a transition without listing terms, and as
+
+$$f = \alpha \parallel \mathtt{0x3a} \parallel n \parallel \mathtt{0x3a} \parallel u \parallel \mathtt{0x3a} \parallel e \parallel \mathtt{0x3a} \parallel t$$
+
+for a \action{list} or an \action{auction}. In both cases these are the memo bytes that follow the leading \texttt{ZNS:} and precede the colon before \texttt{prev}.
 
 \subsection{Commitment inputs}
 
@@ -54,7 +85,7 @@ $$\mathsf{rseed}_\sigma = \mathsf{BLAKE2b{-}256}\big(D,\; \kappa \parallel \math
 
 where $\mathsf{BLAKE2b{-}256}(D, x)$ is unkeyed BLAKE2b with a 32-byte output, the 16-byte personalization $D$, and input $x$. $\mathsf{I2LEOSP}_{64}(\ell)$ is the eight-byte unsigned little-endian encoding of $\ell$. The final $p$ is exactly 32 raw bytes and has no length prefix. The length prefix separates $f$ from $p$, so distinct transitions give distinct hash inputs.
 
-Because $e$ is included in $f$, the \texttt{rseed} cryptographically binds the expiration value recorded in the Name Note. Because $p$ is included, it binds the predecessor.
+Because $e$ is included in $f$, the \texttt{rseed} cryptographically binds the expiration value recorded in the Name Note. Because $t$ is included, it binds the listing terms: a note that offers a name at one price cannot be read as offering it at another. Because $p$ is included, it binds the predecessor.
 
 The remaining commitment inputs follow from $\mathsf{rseed}_\sigma$ exactly as for any Ironwood note, whose note plaintext lead byte is \texttt{0x03} \cite{zip2005}. Let $\underline{\rho}$ be the 32-byte encoding of the note's $\rho$, which is the nullifier revealed by the same action. Let $\mathsf{g}\star_{\mathsf{d}}$ and $\mathsf{pk}\star_{\mathsf{d}}$ be the 32-byte encodings of the recipient's diversified base and transmission key, and $\mathsf{v}$ the note value. Then
 
@@ -120,3 +151,33 @@ The complete memo encoding of this transition is:
 \texttt{0000000000000000000000000000000000000000000000000000000000000000}
 \end{flushleft}
 }
+
+\subsection{Listing test vector}
+
+A \texttt{list} of the same name that spends the claim above, so its predecessor is that claim's \texttt{cmx}. The recipient, value, and $\rho$ are the same. The name is offered at 1.5 ZEC, payable to the mainnet address of the public-key hash made of twenty \texttt{0x11} bytes. The fields $f$ are 162 bytes.
+
+{\footnotesize
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lY@{}}
+\toprule
+Value & Bytes rendered as hexadecimal \\
+\midrule
+$\mathsf{rseed}_\sigma$ & \texttt{5e9eb93343116f23cc562503dba988a91530d90f3be17edd4c9d595fe3b78abb} \\
+\texttt{cmx} & \texttt{0f881dc3a96b71d5abe7958a20747c7e177d5758090bddc0f63315b41719543e} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+}
+
+The complete memo encoding of this transition is:
+
+{\footnotesize
+\begin{flushleft}
+\texttt{ZNS:list:alice:u1897y9pzw3zk6n9twtzu2z5kpkzw3hms2c54fpyv8lnr79m73ta}\\
+\texttt{zljkk3veaxrtwncp66lf45p3f274xy2amqckx0sraje4v835yw8q0q:none:}\\
+\texttt{t1KRqwQhktLV4BjbNLiuH6pb3AMoszZKcQB:1.5:}\\
+\texttt{617b189869560cdd3928456693c1d4060752f18173425294141641e4b05d0f1a}
+\end{flushleft}
+}
+
+An implementation that produces another \texttt{cmx} for this memo is non-conforming.

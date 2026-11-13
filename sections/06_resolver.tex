@@ -15,7 +15,7 @@ A Resolver must:
   \item verify each Name Note's commitment using the derivation of its \texttt{rseed}, $\psi$, and $\mathsf{rcm}$ defined in Section~\ref{sec:name-notes};
   \item verify Mint authorization and attestation as specified in Section~\ref{sec:the-mint};
   \item apply accepted transitions in canonical order to derive registry state; and
-  \item provide clients with the current and historical binding state of each name, including the \field{expires\_at} value committed by the applicable Name Note.
+  \item provide clients with the current and historical binding state of each name, including the \field{expires\_at} value committed by the applicable Name Note and, for a listed name, the listing terms.
 \end{enumerate}
 
 If a chain reorganization changes the canonical Zcash history, the Resolver MUST roll back any state derived from removed blocks and replay the replacement chain from the common ancestor.
@@ -26,16 +26,18 @@ Before state derivation, the Resolver verifies two properties of each Name Note:
 
 \textbf{1. Commitment verification.} The Resolver parses the encoded transition and reconstructs the note commitment as specified in Section~\ref{sec:name-notes}. The Name Note passes commitment verification only if the reconstructed note commitment matches the \field{cmx} recorded on-chain.
 
-\textbf{2. Mint authorization.} The Resolver uses the Mint's published viewing key to detect Name Note outputs. Detection alone does not establish that the Mint created an output: the viewing key is public, so any party can construct a well-formed Name Note output to the Name Note account. A Name Note is Mint-authorized only if its transaction spends a note that only the Mint spending key can spend: the current accepted Name Note of the name for an \action{update} or \action{release}, or a live anchor for a \action{claim}, as specified in Section~\ref{sec:resolver-state}. The Resolver also verifies the Mint's attestation as specified in Section~\ref{sec:the-mint}.
+\textbf{2. Mint authorization.} The Resolver uses the Mint's published viewing key to detect Name Note outputs. Detection alone does not establish that the Mint created an output: the viewing key is public, so any party can construct a well-formed Name Note output to the Name Note account. A Name Note is Mint-authorized only if its transaction spends a note that only the Mint spending key can spend: the current accepted Name Note of the name for an \action{update}, \action{release}, \action{sale}, \action{list}, \action{auction}, or \action{delist}, or a live anchor for a \action{claim}, as specified in Section~\ref{sec:resolver-state}. The Resolver also verifies the Mint's attestation as specified in Section~\ref{sec:the-mint}.
 
-User authorization is not independently reconstructed by the Resolver. As described in Section~\ref{sec:authorization}, Request, Relay, and Respond are not part of the public Name Note history. Under the TEE assumptions, the Resolver relies on Mint attestation to establish that the approved authorization procedure was executed.
+User authorization is not independently reconstructed by the Resolver. As described in Section~\ref{sec:authorization}, Request, Relay, and Respond are not part of the public Name Note history. Under the TEE assumptions, the Resolver relies on Mint attestation to establish that the approved authorization procedure was executed. The same applies to the purchase procedure of Section~\ref{sec:marketplace}: the Resolver does not reconstruct the buy Request, the quote, or the buyer's payment.
 
 \subsection{State derivation}
 \label{sec:resolver-state}
 
 The Resolver processes transactions in canonical order: ascending block height, then transaction order within the block. A transaction carrying more than one Name Note produces no accepted transition.
 
-For each name, the \field{prev} field links a transition to the preceding Name Note within the current registration. A \action{claim}, including one following a \action{release}, uses the zero predecessor defined in Section~\ref{sec:name-notes}. An \action{update} or \action{release} is accepted only if its transaction spends the current accepted Name Note of that name and no other name's, and its \field{prev} matches the \field{cmx} of that Name Note.
+For each name, the \field{prev} field links a transition to the preceding Name Note within the current registration. A \action{claim}, including one following a \action{release}, uses the zero predecessor defined in Section~\ref{sec:name-notes}. An \action{update}, \action{release}, \action{sale}, \action{list}, \action{auction}, or \action{delist} is accepted only if its transaction spends the current accepted Name Note of that name and no other name's, and its \field{prev} matches the \field{cmx} of that Name Note. A \action{list}, \action{auction}, or \action{delist} is accepted only if it also records the Unified Address and the \field{expires\_at} of the Name Note it spends. A \action{sale} is accepted only if the Name Note it spends is a \action{list} or an \action{auction} and it records that note's \field{expires\_at}.
+
+An accepted \action{sale} binds the name to the Unified Address it records. An accepted \action{list} or \action{auction} leaves the binding unchanged and makes the name listed on the terms it records, until the next accepted Name Note for that name. An accepted \action{delist} leaves the binding unchanged and ends the listing.
 
 A \action{claim} has no predecessor Name Note to spend and instead spends an anchor: a zero-value note held by the Name Note account. The set of live anchors, the anchor pool, is established once during Mint setup with a fixed number of anchors. After the pool is established, other zero-value outputs to the Name Note account do not become anchors. A \action{claim} is accepted only if its transaction spends exactly one live anchor, spends no live Name Note, and creates exactly one zero-value output to the Name Note account, and the name has no live registration.
 
@@ -45,4 +47,4 @@ Because a Name Note can be spent only once, at most one transition can consume a
 
 A transaction that spends the current accepted Name Note of a name without creating a valid successor for that name ends the registration at that transaction. No \action{release} Name Note is created in this case.
 
-Each accepted transition updates the registry state for that name. An \action{update} or \action{release} whose transaction does not spend the current accepted Name Note, and a \action{claim} whose transaction does not spend a live anchor, do not affect the registry.
+Each accepted transition updates the registry state for that name. An \action{update}, \action{release}, \action{sale}, \action{list}, \action{auction}, or \action{delist} whose transaction does not spend the current accepted Name Note, and a \action{claim} whose transaction does not spend a live anchor, do not affect the registry.
