@@ -39,7 +39,7 @@ The price is $P_{\text{start}}$ at the start block and $P_{\text{min}}$ at the e
 
 A buyer buys a listed name in three steps: a \action{buy} Request, a quote from the Mint, and a payment to the seller.
 
-\textbf{Request.} The buyer submits the \action{buy} Request of Section~\ref{sec:requests} to the Mint's treasury account, carrying the request fee of Section~\ref{sec:authorization}. Its Unified Address is the one the sale will bind, and it MUST contain an Ironwood receiver. The Mint evaluates the Request at the block that contains it. The Mint MUST NOT open a buy, and retains the fee, when:
+\textbf{Request.} The buyer submits the \action{buy} Request of Section~\ref{sec:requests} to the Mint's treasury account, carrying the request fee of Section~\ref{sec:authorization}. Its Unified Address is the one the sale will bind. The Mint evaluates the Request at the block that contains it. The Mint MUST NOT open a buy, and retains the fee, when:
 
 \begin{itemize}
   \item the name is not listed, or it is an \action{auction} whose end block has passed;
@@ -60,7 +60,7 @@ The Mint returns the Request's value, less the network fee of the return, with o
 
 At most one buy is open for a name. When a buy opens, the Mint discards any OTP pending for that name.
 
-\textbf{Quote.} The Mint sends the buyer a shielded memo from the treasury account, to the Ironwood receiver of the buyer's Unified Address:
+\textbf{Quote.} The Mint sends the buyer a shielded memo from the treasury account, to the receiver of the buyer's Unified Address that a Relay would use:
 
 \begin{center}
 \texttt{ZNS:buyotp:<otp>:<name>:<ua>}\\
@@ -99,4 +99,4 @@ If a chain reorganization changes the canonical history, the Mint MUST discard e
 
 \subsection{Payments the Mint does not count}
 
-The payment is an ordinary transparent transfer from the buyer to the seller. The Mint does not receive it, hold it, or control it, and it cannot return it. A payment that the Mint does not count leaves the name with the seller. This includes a payment of another amount, a payment in a block at or after the quote's deadline, a payment made after the listing ended, and a payment for a buy the Mint discarded after a reorganization. Recovering such a payment is between the buyer and the seller.
+The payment is an ordinary transparent transfer from the buyer to the seller. The Mint never holds it and cannot return it. A payment the Mint does not count, whether for its amount, its timing, an ended listing, or a buy discarded after a reorganization, leaves the name with the seller and the payment with the seller.

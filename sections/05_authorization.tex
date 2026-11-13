@@ -13,9 +13,9 @@ A \action{sale} does not require the controller's OTP. The listing is the contro
 
 An \action{update}, a controller-requested \action{release}, a \action{list}, an \action{auction}, or a \action{delist} is three memos: Request, Relay, and Respond.
 
-\textbf{Request.} The controller submits the Request specified in Section~\ref{sec:requests} as an Ironwood output to the Mint's treasury account. That note MUST carry the request fee of one US dollar, converted at the rate of the active pricing policy and rounded up to the next 100{,}000-zatoshi step. The fee provides Sybil resistance: an underpaid Request is rejected and its value is retained by the Mint. The fee is not the name price. The Relay is funded from the Mint's treasury account.
+\textbf{Request.} The controller submits the Request specified in Section~\ref{sec:requests} as a shielded output to the Mint's treasury account. That note MUST carry the request fee set by the active pricing policy. The fee provides Sybil resistance: an underpaid Request is rejected and its value is retained by the Mint. The fee is not the name price. The Relay is funded from the Mint's treasury account.
 
-\textbf{Relay.} The Mint sends the Relay to the Ironwood receiver contained in the Unified Address currently bound to the name. The Mint MUST reject the exchange if that Unified Address does not contain an Ironwood receiver. Successful authorization establishes access to that receiver only, not to any other receiver contained in the Unified Address.
+\textbf{Relay.} The Mint sends the Relay to a shielded receiver of the Unified Address currently bound to the name: its Ironwood receiver when it has one, otherwise its Sapling receiver. A Unified Address with neither cannot control a name. Successful authorization establishes access to that receiver only, not to any other receiver contained in the Unified Address.
 
 \textbf{Respond.} The controller returns the memo it received, unchanged, to the same treasury account:
 
@@ -23,7 +23,7 @@ An \action{update}, a controller-requested \action{release}, a \action{list}, an
 \texttt{ZNS:otp:<otp>:<name>:<verb>:<ua>}
 \end{center}
 
-The Relay and the Respond differ only in sender. For a \action{list} or an \action{auction}, both carry the listing terms after the Unified Address, in the forms given in Section~\ref{sec:requests}.
+The Relay and the Respond differ only in sender.
 
 The name payment is on the Respond. That note MUST satisfy the price and payment requirements of the active pricing policy. The Request funds only the Relay; it is not the name price. A \action{list}, \action{auction}, or \action{delist} has no name price.
 
@@ -35,7 +35,7 @@ An update MAY specify the currently bound Unified Address as the target address 
 
 \subsection{Relay memo}
 
-The Relay is an Ironwood shielded memo from the Mint to the controller. The non-padding bytes are:
+The Relay is a shielded memo from the Mint to the controller. The non-padding bytes are:
 
 \begin{verbatim}
 ZNS:otp:<otp>:<name>:<verb>:<ua>
@@ -51,7 +51,7 @@ Relay memos are sent from the Mint treasury account. That account's viewing key 
 
 The Mint generates each OTP uniformly from \texttt{000000} through \texttt{999999} using a cryptographically secure random source inside the attested environment \cite{zns-mint}.
 
-For an \action{update}, the Mint computes the resulting \field{expires\_at} before issuing the OTP and binds the OTP to the exact \texttt{(name, action, ua, expires\_at)} tuple in its protected state.
+For an \action{update}, the Mint computes the resulting \field{expires\_at} before issuing the OTP and binds the OTP to the exact \texttt{(name, action, ua, expires\_at)} tuple.
 
 For an ordinary update, \field{expires\_at} is the current accepted expiration value carried forward unchanged. For a renewal, \field{expires\_at} is the value obtained by adding the requested additional term to the current accepted expiration.
 
@@ -75,6 +75,5 @@ OTP expiration is independent of registration expiration and the liveness deadli
 
 \subsection{Public verification boundary}
 
-Request, Relay, and Respond are not part of the public Name Note history. The Resolver derives registry state from Name Notes. It can check the resulting note, including the \field{expires\_at} committed by an \action{update}, and Mint authorization and attestation. It cannot recover the OTP, or prove from those notes that an OTP was issued for that transition. The same holds for a \action{sale}: the buy Request and the quote are not public, and the \action{sale} Name Note does not name the buyer's payment.
-
+Request, Relay, and Respond are not part of the public Name Note history. The Resolver derives registry state from Name Notes. It can check the resulting note, including the \field{expires\_at} committed by an \action{update}, and Mint authorization and attestation. It cannot recover the OTP, or prove from those notes that an OTP was issued for that transition.
 Under the TEE assumptions, attestation is what establishes that the Mint ran the approved authorization procedure.
