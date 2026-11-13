@@ -1,7 +1,7 @@
 \section{Name Notes}
 \label{sec:name-notes}
 
-A Name Note is an Ironwood output whose memo records a name transition by encoding the type of name change, the name, the associated Unified Address when applicable, the expiration value, and a predecessor reference.
+A Name Note is an Ironwood output whose memo records a name transition by encoding the type of name change, the name, the associated Unified Address when applicable, the expiration value, and a predecessor reference. Its \texttt{rseed} is derived from that transition, so the note commitment binds the transition the memo records.
 
 \subsection{Memo encoding}
 
@@ -12,20 +12,20 @@ The name field MUST contain between 1 and 63 bytes, each of which is ASCII \text
 The remaining bytes encode one transition in one of the following formats:
 
 \begin{center}
-\texttt{ZNS:claim:<name>:<ua>:<expires\_at>:<prev\_rcm>}\\
-\texttt{ZNS:update:<name>:<ua>:<expires\_at>:<prev\_rcm>}\\
-\texttt{ZNS:release:<name>:<ua>:none:<prev\_rcm>}
+\texttt{ZNS:claim:<name>:<ua>:<expires\_at>:<prev>}\\
+\texttt{ZNS:update:<name>:<ua>:<expires\_at>:<prev>}\\
+\texttt{ZNS:release:<name>:<ua>:none:<prev>}
 \end{center}
 
 The \texttt{<expires\_at>} field is either the canonical ASCII decimal encoding of a Unix timestamp in whole seconds or the exact ASCII bytes \texttt{none}. The value \texttt{none} indicates that the registration has no fixed expiration. A \texttt{release} MUST encode \texttt{none} as its \texttt{expires\_at} value and the Unified Address of the binding being released as its \texttt{ua} value.
 
-The \texttt{prev\_rcm} field is the 64-character lowercase hexadecimal encoding of the predecessor Name Note's \texttt{rcm} value. The first claim uses 64 zeroes.
+The \texttt{prev} field is the 64-character lowercase hexadecimal encoding of the predecessor Name Note's \field{cmx}: the 32-byte canonical little-endian encoding of its extracted note commitment, as recorded in the on-chain action that created it. A \texttt{claim} has no predecessor and uses 64 zeroes.
 
 A Name Note parser MUST reject a memo that does not match one of these encodings.
 
 \subsection{Transition representation}
 
-To derive the ZNS-specific note-commitment inputs, $\mathsf{rcm}_\sigma$ and $\psi_\sigma$, interpret the encoded transition as the tuple
+To derive the note's \texttt{rseed}, interpret the encoded transition as the tuple
 
 $$\sigma = (\alpha, n, u, e, p)$$
 
@@ -35,38 +35,44 @@ where:
   \item $n$: The raw bytes of the name field.
   \item $u$: The raw bytes of the \texttt{ua} field.
   \item $e$: The raw bytes of the \texttt{expires\_at} field.
-  \item $p$: The 32 raw bytes decoded from \texttt{prev\_rcm}.
+  \item $p$: The 32 raw bytes decoded from \texttt{prev}.
 \end{itemize}
+
+Define the fields $f$ of the transition as
+
+$$f = \alpha \parallel \mathtt{0x3a} \parallel n \parallel \mathtt{0x3a} \parallel u \parallel \mathtt{0x3a} \parallel e.$$
+
+These are the memo bytes that follow the leading \texttt{ZNS:} and precede the colon before \texttt{prev}.
 
 \subsection{Commitment inputs}
 
-ZNS derives both commitment inputs from the same transition representation $\sigma$ using the same hash construction. Within the hash construction, the only difference is the ASCII derivation tag, \texttt{rcm} or \texttt{psi}. The resulting digests are then reduced into different Pallas fields.
+A Name Note is a bound note: the sender does not sample its \texttt{rseed} at random but derives it from the transition.
 
-To prevent ambiguous concatenation, define $\mathsf{LP}(x)$ as the four-byte unsigned little-endian byte length of $x$, followed by $x$ itself. Define the protocol domain tag $T$ as the 12 ASCII bytes \texttt{ZcashName/v1}. Quotation marks are not part of $T$.
+Define the binding domain $D$ as the 16 ASCII bytes \texttt{ZNS\_\_\_Name\_Notes}, and the record kind $\kappa$ as the single byte \texttt{0x01}. Let $\ell$ be the byte length of $f$. Then
 
-For derivation tag $t$, where $t$ is the exact ASCII byte string \texttt{rcm} or \texttt{psi}, define:
+$$\mathsf{rseed}_\sigma = \mathsf{BLAKE2b{-}256}\big(D,\; \kappa \parallel \mathsf{I2LEOSP}_{64}(\ell) \parallel f \parallel p\big),$$
 
-$$H_t(\sigma) = \mathsf{BLAKE2b{-}512}( \mathsf{LP}(T) \parallel \mathsf{LP}(t) \parallel \mathsf{LP}(\alpha) \parallel \mathsf{LP}(n) \parallel \mathsf{LP}(u) \parallel \mathsf{LP}(e) \parallel p ).$$
+where $\mathsf{BLAKE2b{-}256}(D, x)$ is unkeyed BLAKE2b with a 32-byte output, the 16-byte personalization $D$, and input $x$. $\mathsf{I2LEOSP}_{64}(\ell)$ is the eight-byte unsigned little-endian encoding of $\ell$. The final $p$ is exactly 32 raw bytes and has no length prefix. The length prefix separates $f$ from $p$, so distinct transitions give distinct hash inputs.
 
-Because $e$ is included in $\sigma$, both ZNS-specific commitment inputs cryptographically bind the \texttt{expires\_at} value recorded in the Name Note.
+Because $e$ is included in $f$, the \texttt{rseed} cryptographically binds the expiration value recorded in the Name Note. Because $p$ is included, it binds the predecessor.
 
-The final $p$ is exactly 32 raw bytes and has no length prefix. Each $H_t$ invocation uses unkeyed BLAKE2b-512 with a 64-byte output and no additional personalization.
+The remaining commitment inputs follow from $\mathsf{rseed}_\sigma$ exactly as for any Ironwood note, whose note plaintext lead byte is \texttt{0x03} \cite{zip2005}. Let $\underline{\rho}$ be the 32-byte encoding of the note's $\rho$, which is the nullifier revealed by the same action. Let $\mathsf{g}\star_{\mathsf{d}}$ and $\mathsf{pk}\star_{\mathsf{d}}$ be the 32-byte encodings of the recipient's diversified base and transmission key, and $\mathsf{v}$ the note value. Then
 
-The two commitment inputs are then:
+$$\psi_\sigma = \mathsf{ToBase}\big(\mathsf{PRF^{expand}_{rseed_\sigma}}(\mathtt{0x09} \parallel \underline{\rho})\big),$$
 
-$$\mathsf{rcm}_\sigma = \mathsf{ToScalar}(H_{\mathtt{rcm}}(\sigma)), \quad \psi_\sigma = \mathsf{ToBase}(H_{\mathtt{psi}}(\sigma)).$$
+$$\mathsf{pre\_rcm} = \mathtt{0x0B} \parallel \mathsf{g}\star_{\mathsf{d}} \parallel \mathsf{pk}\star_{\mathsf{d}} \parallel \mathsf{I2LEOSP}_{64}(\mathsf{v}) \parallel \underline{\rho} \parallel \mathsf{I2LEOSP}_{256}(\psi_\sigma),$$
 
-The value $\mathsf{rcm}_\sigma$ is the Pallas scalar-field element used as the Ironwood note-commitment randomness.
+$$\mathsf{rcm}_\sigma = \mathsf{ToScalar}\big(\mathsf{PRF^{expand}_{rseed_\sigma}}(\mathsf{pre\_rcm})\big).$$
 
-The value $\psi_\sigma$ is the Pallas base-field element supplied to the Ironwood note commitment construction.
+$\mathsf{PRF^{expand}}$, $\mathsf{ToScalar}$, $\mathsf{ToBase}$, and the field types are those defined for Ironwood by the Zcash Protocol Specification and ZIP 2005 \cite{zcash-protocol,zip224,zip2005}. The value $\mathsf{rcm}_\sigma$ is the Pallas scalar-field element used as the Ironwood note-commitment randomness. The value $\psi_\sigma$ is the Pallas base-field element supplied to the Ironwood note commitment construction. The canonical encoding of either field element is its 32-byte little-endian field representation.
 
-$\mathsf{ToScalar}$, $\mathsf{ToBase}$, and the field types are those defined for Ironwood by the Zcash Protocol Specification \cite{zcash-protocol,zip224}. Neither $\mathsf{rcm}_\sigma$ nor $\psi_\sigma$ is a raw 64-byte BLAKE2b digest; each is the field element obtained by reducing the digest produced with its respective derivation tag. The canonical encoding of either field element is its 32-byte little-endian field representation. ZNS derives both field elements from $\sigma$, rather than from the $rseed$ derivation used by ordinary ZIP-212 receiving \cite{zip212,zcash-protocol}.
+The note plaintext carries $\mathsf{rseed}_\sigma$ as usual. A Name Note is otherwise an ordinary Ironwood note: a receiver that follows ZIP 212 and ZIP 2005 decrypts it and recomputes its commitment without ZNS-specific rules \cite{zip212,zip2005}.
 
-Changing the domain tag, a derivation tag, field order, length width, byte order, hash parameters, or reduction rule changes the protocol version and requires new test vectors.
+Changing the binding domain, the record kind, field order, the field separator, the length width, byte order, hash parameters, or the predecessor encoding changes the protocol version and requires new test vectors.
 
 \subsection{Commitment verification}
 
-ZNS changes the derivation of $\psi$ and $\mathsf{rcm}$ but does not otherwise change the standard note commitment construction. A verifier derives $\psi_\sigma$ and $\mathsf{rcm}_\sigma$ from the encoded transition, combines them with the remaining note components using the standard construction \cite{zcash-protocol,zip224}, and reconstructs the note commitment.
+A verifier derives $\mathsf{rseed}_\sigma$ from the encoded transition, derives $\psi_\sigma$ and $\mathsf{rcm}_\sigma$ from it, combines them with the remaining note components using the standard construction \cite{zcash-protocol,zip224}, and reconstructs the note commitment. The verifier needs the recipient address, the note value, and the action's nullifier and \field{cmx}. It needs no decryption key.
 
 The Name Note passes commitment verification only if the reconstructed value equals the \field{cmx} recorded in the on-chain action.
 
@@ -84,8 +90,9 @@ Value & Canonical little-endian bytes rendered as hexadecimal \\
 \midrule
 \texttt{g\_d} & \texttt{de4338f2ab9fd8300a3a1c20dd690ce27026c6001c295d7c641a067ce809b11e} \\
 \texttt{pk\_d} & \texttt{6df609f5710f3b5deecd4ee4b8f0173b44af6cf8918ac00269526031ba628996} \\
-$\psi_\sigma$ & \texttt{9f8a61b860c737d4564f12c635d654b843bc7115d9dc6cf6f09e409c81b8d13e} \\
-$\mathsf{rcm}_\sigma$ & \texttt{daa928be21d0ec13b5dbb0244699dbfeba546c71591d24d7824db78e4670c504} \\
+$\mathsf{rseed}_\sigma$ & \texttt{5bcb6b8f30d7f8cd75f253b738c6fb034841e31c70d137373f3b36b0c595e56d} \\
+$\psi_\sigma$ & \texttt{b174aa83656d538b12d561e9048352bbd8bf1b66fe8d396977b4b597b962f70d} \\
+$\mathsf{rcm}_\sigma$ & \texttt{19cb8bab986250c69207bb4cc005f9944f913c635d543ed3323fcd5f1b7b8d1e} \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -94,7 +101,15 @@ $\mathsf{rcm}_\sigma$ & \texttt{daa928be21d0ec13b5dbb0244699dbfeba546c71591d24d7
 \noindent\texttt{ua}: \texttt{u1897y9pzw3zk6n9twtzu2z5kpkzw3hms2c54fpyv8lnr79m73ta}\\
 \texttt{zljkk3veaxrtwncp66lf45p3f274xy2amqckx0sraje4v835yw8q0q}
 
-Set the value to zero and $\rho$ to 32 bytes of \texttt{0x33}. The resulting \texttt{cmx} is \texttt{cc320736a0c1df1e4ffcee2b64aa73a9e6d06bb218e155a6fef422e1ecb1f70c}. An implementation that produces another value is non-conforming.
+The fields $f$ are 123 bytes. $\mathsf{rseed}_\sigma$ is a byte string and is rendered as it is. Set the value to zero and $\rho$ to 32 bytes of \texttt{0x33}. The resulting \texttt{cmx} is
+
+{\footnotesize
+\begin{center}
+\texttt{617b189869560cdd3928456693c1d4060752f18173425294141641e4b05d0f1a}
+\end{center}
+}
+
+\noindent An implementation that produces another value is non-conforming.
 
 The complete memo encoding of this transition is:
 

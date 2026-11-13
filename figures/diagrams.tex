@@ -64,7 +64,7 @@
 }
 
 % === Predecessor Chain ===
-% Shows how prev_rcm links name notes into one continuous history.
+% Shows how prev links name notes into one continuous history.
 % Place in §05 (Canonical History and State Derivation)
 
 \newcommand{\znschain}{%
@@ -77,20 +77,20 @@
 
 % Name notes
 \node[note, fill=gray!8] (c1) {\action{claim}\\\scriptsize prev = $\bot$};
-\node[note, fill=gray!12, right=of c1] (u1) {\action{update}\\\scriptsize prev = rcm$_1$};
-\node[note, fill=gray!8, right=of u1] (r1) {\action{release}\\\scriptsize prev = rcm$_2$};
-\node[note, fill=gray!12, right=of r1] (c2) {\action{claim}\\\scriptsize prev = rcm$_3$};
+\node[note, fill=gray!12, right=of c1] (u1) {\action{update}\\\scriptsize prev = cmx$_1$};
+\node[note, fill=gray!8, right=of u1] (r1) {\action{release}\\\scriptsize prev = cmx$_2$};
+\node[note, fill=gray!12, right=of r1] (c2) {\action{claim}\\\scriptsize prev = $\bot$};
 
 % Arrows
 \draw[arrow] (c1) -- (u1);
 \draw[arrow] (u1) -- (r1);
 \draw[arrow] (r1) -- (c2);
 
-% Derived rcm labels below
-\node[rlabel, below=0.15cm of c1] {rcm$_1$};
-\node[rlabel, below=0.15cm of u1] {rcm$_2$};
-\node[rlabel, below=0.15cm of r1] {rcm$_3$};
-\node[rlabel, below=0.15cm of c2] {rcm$_4$};
+% Each note's cmx below
+\node[rlabel, below=0.15cm of c1] {cmx$_1$};
+\node[rlabel, below=0.15cm of u1] {cmx$_2$};
+\node[rlabel, below=0.15cm of r1] {cmx$_3$};
+\node[rlabel, below=0.15cm of c2] {cmx$_4$};
 
 % Registration period bracket
 \node[font=\scriptsize\itshape, text=gray, above=0.3cm of c1.north west, anchor=south west] {registration 1};
