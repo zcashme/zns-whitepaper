@@ -48,7 +48,8 @@ The Mint evaluates each request against the following requirements:
   \item \textbf{Payment.} The memo must satisfy the price and payment requirements defined by the active pricing policy. For a \action{claim}, that payment is the Request. For an \action{update} or controller-requested \action{release}, that payment is the Respond specified in Section~\ref{sec:authorization}.
   \item \textbf{Request validity.} The Request or Respond must satisfy Section~\ref{sec:requests}. The name, Unified Address when applicable, requested registration term or extension when applicable, and resulting encoded transition must satisfy the protocol's validity rules.
   \item \textbf{Lifecycle policy.} The request must satisfy the active registration, expiration, renewal, and liveness rules defined in Section~\ref{sec:the-mint-lifecycle}.
-  \item \textbf{User authorization.} An \action{update} or controller-requested \action{release} must complete the authorization procedure defined in Section~\ref{sec:authorization}. A lifecycle \action{release} created by the Mint to enforce expiration or liveness does not require user authorization.
+  \item \textbf{User authorization.} An \action{update}, controller-requested \action{release}, \action{list}, \action{auction}, or \action{delist} must complete the authorization procedure defined in Section~\ref{sec:authorization}. A lifecycle \action{release} created by the Mint to enforce expiration or liveness does not require user authorization.
+  \item \textbf{Marketplace rules.} A \action{list}, \action{auction}, \action{delist}, or \action{buy} must satisfy Section~\ref{sec:marketplace}. A \action{sale} is created by the Mint when a buyer's payment is counted, not on a Request for a \action{sale}.
 \end{itemize}
 
 If all applicable requirements are satisfied, the Mint accepts the request and creates the resulting Name Note.
@@ -120,13 +121,13 @@ For a registration whose most recent liveness time is $\tau$, the liveness deadl
 
 $$\text{liveness\_deadline} = \tau + L.$$
 
-The initial liveness interval begins when the \action{claim} Name Note is accepted on the canonical Zcash chain. A successfully authorized \action{update} resets the liveness interval when the resulting Name Note is accepted on the canonical chain, including an update that retains the currently bound Unified Address.
+The initial liveness interval begins when the \action{claim} Name Note is accepted on the canonical Zcash chain. A successfully authorized \action{update} resets the liveness interval when the resulting Name Note is accepted on the canonical chain, including an update that retains the currently bound Unified Address. An accepted \action{list}, \action{auction}, or \action{delist} resets the liveness interval in the same way, because the controller completed the same authorization to obtain it. An accepted \action{sale} resets it for the buyer, who is the new controller.
 
-The liveness time of a \action{claim} or \action{update} is derived from the canonical-chain MTP associated with the block containing that accepted Name Note.
+The liveness time of a \action{claim}, \action{update}, \action{sale}, \action{list}, \action{auction}, or \action{delist} is derived from the canonical-chain MTP associated with the block containing that accepted Name Note.
 
-The Mint records the most recent successful liveness event in protected persistent state and derives the next liveness deadline using canonical-chain MTP. If a chain reorganization removes or changes a \action{claim} or \action{update} used to establish the current liveness time, the Mint MUST reconcile its protected lifecycle state with the replacement canonical chain before enforcing the resulting liveness deadline.
+The Mint records the most recent successful liveness event in protected persistent state and derives the next liveness deadline using canonical-chain MTP. If a chain reorganization removes or changes a Name Note used to establish the current liveness time, the Mint MUST reconcile its protected lifecycle state with the replacement canonical chain before enforcing the resulting liveness deadline.
 
-A Request or Relay does not satisfy liveness. A failed, expired, or incomplete Respond does not satisfy liveness. A liveness interval resets only when the resulting \action{update} Name Note is accepted on the canonical Zcash chain.
+A Request or Relay does not satisfy liveness. A failed, expired, or incomplete Respond does not satisfy liveness. A liveness interval resets only when the resulting Name Note is accepted on the canonical Zcash chain.
 
 If the required liveness interval passes without a successful liveness event, the Mint MUST create a \action{release} Name Note.
 
@@ -143,10 +144,10 @@ The Mint MUST create a \action{release} Name Note when any of the following occu
 \begin{enumerate}
   \item the controller successfully completes the required authorization procedure for an explicit \action{release};
   \item canonical-chain MTP reaches the committed \field{expires\_at}; or
-  \item the current liveness deadline is reached without an accepted \action{update} Name Note having reset the liveness interval.
+  \item the current liveness deadline is reached without an accepted Name Note having reset the liveness interval.
 \end{enumerate}
 
-The first condition is a controller-requested release and requires the OTP authorization procedure defined in Section~\ref{sec:authorization}. The second and third conditions are lifecycle releases created by the Mint and do not require user authorization.
+The first condition is a controller-requested release and requires the OTP authorization procedure defined in Section~\ref{sec:authorization}. The second and third conditions are lifecycle releases created by the Mint and do not require user authorization. If either is reached while a buy is open for the name, the Mint creates the \action{release} after the buy closes, as specified in Section~\ref{sec:marketplace}.
 
 Reaching an expiration or liveness deadline does not itself modify registry state. Registry state changes only when the resulting \action{release} Name Note is accepted on the canonical Zcash chain, or when another transaction ends the registration under the rules in Section~\ref{sec:resolver-state}.
 
@@ -161,5 +162,7 @@ A Resolver must be able to reconstruct registry state from the on-chain Name Not
 For a \action{claim} or \action{update}, the resulting \field{expires\_at} is part of the transition and MUST be present in the Name Note. The requested registration term, requested extension, and MTP values used by the Mint to apply lifecycle policy are policy inputs and need not be repeated in the Name Note.
 
 For a \action{release}, the Name Note records the Unified Address of the binding being released.
+
+For a \action{list} or an \action{auction}, the listing terms are part of the transition and MUST be present in the Name Note. A \action{sale}, \action{list}, \action{auction}, or \action{delist} records the Unified Address and the \field{expires\_at} that hold after it, as a \action{claim} or \action{update} does. The buy Request, the quote, and the buyer's payment are not repeated in the Name Note.
 
 The protocol's validity limits on names, Unified Addresses, and other encoded fields MUST ensure that every valid \zns{} transition fits within a single 512-byte Name Note memo.

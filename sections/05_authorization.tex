@@ -7,9 +7,11 @@ A \action{claim} has no existing controller and therefore requires no OTP.
 
 A lifecycle \action{release} created by the Mint to enforce expiration or liveness does not require an OTP.
 
+A \action{sale} does not require the controller's OTP. The listing is the controller's standing authorization to sell on its terms, and the buyer's payment completes the sale as specified in Section~\ref{sec:marketplace}.
+
 \subsection{Request, Relay, and Respond}
 
-An \action{update} or controller-requested \action{release} is three memos: Request, Relay, and Respond.
+An \action{update}, a controller-requested \action{release}, a \action{list}, an \action{auction}, or a \action{delist} is three memos: Request, Relay, and Respond.
 
 \textbf{Request.} The controller submits the Request specified in Section~\ref{sec:requests} as an Ironwood output to the Mint's treasury account. That note MUST carry the request fee of one US dollar, converted at the rate of the active pricing policy and rounded up to the next 100{,}000-zatoshi step. The fee provides Sybil resistance: an underpaid Request is rejected and its value is retained by the Mint. The fee is not the name price. The Relay is funded from the Mint's treasury account.
 
@@ -21,9 +23,9 @@ An \action{update} or controller-requested \action{release} is three memos: Requ
 \texttt{ZNS:otp:<otp>:<name>:<verb>:<ua>}
 \end{center}
 
-The Relay and the Respond differ only in sender.
+The Relay and the Respond differ only in sender. For a \action{list} or an \action{auction}, both carry the listing terms after the Unified Address, in the forms given in Section~\ref{sec:requests}.
 
-The name payment is on the Respond. That note MUST satisfy the price and payment requirements of the active pricing policy. The Request funds only the Relay; it is not the name price.
+The name payment is on the Respond. That note MUST satisfy the price and payment requirements of the active pricing policy. The Request funds only the Relay; it is not the name price. A \action{list}, \action{auction}, or \action{delist} has no name price.
 
 The OTP is bound to the requested transition, expires after a fixed time interval measured using canonical-chain MTP, and is consumed on successful use. Receipt of the correct OTP within that window demonstrates both the ability to decrypt shielded messages sent to the selected receiver and temporal liveness.
 
@@ -39,7 +41,7 @@ The Relay is an Ironwood shielded memo from the Mint to the controller. The non-
 ZNS:otp:<otp>:<name>:<verb>:<ua>
 \end{verbatim}
 
-The six-digit code is the first field after the message type so a wallet displays it without the controller scanning later fields. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes. The \texttt{<name>} field is the name being updated or released. The \texttt{<verb>} field is \texttt{update} or \texttt{release}. The \texttt{<ua>} field is the target Unified Address from the Request.
+The six-digit code is the first field after the message type so a wallet displays it without the controller scanning later fields. The \texttt{<otp>} field is exactly six ASCII decimal digits, including leading zeroes. The \texttt{<name>} field is the name the Request concerns. The \texttt{<verb>} field is \texttt{update}, \texttt{release}, \texttt{list}, \texttt{auction}, or \texttt{delist}. The \texttt{<ua>} field is the target Unified Address from the Request. A \texttt{list} or \texttt{auction} Relay continues with the listing terms from the Request, each preceded by a colon.
 
 The memo is exactly 512 bytes and zero-padded. The \texttt{otp} message type distinguishes it from a Request. A Request parser MUST reject it; the Mint's parser accepts it as a Respond.
 
@@ -55,7 +57,7 @@ For an ordinary update, \field{expires\_at} is the current accepted expiration v
 
 The user is not required to supply the resulting absolute \field{expires\_at} as a request field. The Mint MUST accept the OTP only for the same pending update and MUST reject it if the resulting \texttt{(name, action, ua, expires\_at)} would differ from the tuple to which the OTP was issued.
 
-For a controller-requested \action{release}, the OTP remains bound to the applicable \texttt{(name, action, ua)} values. Lifecycle releases created by the Mint to enforce expiration or liveness do not use OTP authorization.
+For a controller-requested \action{release} or a \action{delist}, the OTP remains bound to the applicable \texttt{(name, action, ua)} values. For a \action{list} or an \action{auction}, the OTP is bound to \texttt{(name, action, ua)} and the listing terms, and the Mint MUST reject a Respond whose terms differ from the Request's. Lifecycle releases created by the Mint to enforce expiration or liveness do not use OTP authorization.
 
 The current \zns{} deployment MUST fix the OTP validity duration $D_{\text{OTP}}$ in seconds and the maximum number of verification attempts.
 
@@ -73,6 +75,6 @@ OTP expiration is independent of registration expiration and the liveness deadli
 
 \subsection{Public verification boundary}
 
-Request, Relay, and Respond are not part of the public Name Note history. The Resolver derives registry state from Name Notes. It can check the resulting note, including the \field{expires\_at} committed by an \action{update}, and Mint authorization and attestation. It cannot recover the OTP, or prove from those notes that an OTP was issued for that transition.
+Request, Relay, and Respond are not part of the public Name Note history. The Resolver derives registry state from Name Notes. It can check the resulting note, including the \field{expires\_at} committed by an \action{update}, and Mint authorization and attestation. It cannot recover the OTP, or prove from those notes that an OTP was issued for that transition. The same holds for a \action{sale}: the buy Request and the quote are not public, and the \action{sale} Name Note does not name the buyer's payment.
 
 Under the TEE assumptions, attestation is what establishes that the Mint ran the approved authorization procedure.
